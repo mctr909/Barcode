@@ -170,7 +170,7 @@ namespace Code {
             "\\","]", "^", "_", "\0",
             "SOH", "STX", "ETX", "EOT", "ENQ",
 
-            "ACK", "\a", "\b", "HT", "\n",
+            "ACK", "\a", "\b", "\t", "\n",
             "VT", "FF", "\r", "SO", "SI",
 
             "DLE", "DC1", "DC2", "DC3", "DC4",
@@ -254,7 +254,7 @@ namespace Code {
         void Draw() {
             switch (cmbType.SelectedIndex) {
             case 0: {
-                numPitch.Increment = 1;
+                numPitch.Increment = 1.0m;
                 numPitch.Value = (int)numPitch.Value;
                 var bmp = DrawCode128(textBox1.Text);
                 panel1.Width = bmp.Width + 25;
@@ -544,16 +544,16 @@ namespace Code {
 
             int maxLength = 0;
             int codeCount = 0;
-            char[] termChar = new char[] { 'a', 'b', 'c', 'd' };
+            char[] termChar = new char[] { 'A', 'B', 'C', 'D' };
             for (int l = 0; l < lines.Length; l++) {
-                var line = lines[l];
+                var line = lines[l].ToUpper();
                 if (string.IsNullOrWhiteSpace(line)) {
                     continue;
                 }
-                if (line.Substring(0, 1).ToLower().IndexOfAny(termChar) < 0) {
+                if (line.Substring(0, 1).IndexOfAny(termChar) < 0) {
                     line = "A" + line;
                 }
-                if (line.Substring(line.Length - 1, 1).ToLower().IndexOfAny(termChar) < 0) {
+                if (line.Substring(line.Length - 1, 1).IndexOfAny(termChar) < 0) {
                     line += "A";
                 }
                 var length = line.Length;
@@ -584,8 +584,11 @@ namespace Code {
 
                 /* draw data */
                 for (int i = 0; 1 <= line.Length; i++) {
-                    var chr = line.Substring(0, 1).ToUpper();
+                    var chr = line.Substring(0, 1);
                     if (!NW7.ContainsKey(chr)) {
+                        chr = "-";
+                    }
+                    if (1 <= i && i < lines[l].Length - 1 && 0 <= chr.IndexOfAny(termChar)) {
                         chr = "-";
                     }
                     var code = NW7[chr];
