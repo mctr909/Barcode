@@ -122,6 +122,7 @@
             // 
             this.cmbType.FormattingEnabled = true;
             this.cmbType.Items.AddRange(new object[] {
+            "CODE128",
             "CODE39",
             "NW7/CODABAR",
             "ITF",

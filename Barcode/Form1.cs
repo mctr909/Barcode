@@ -28,28 +28,16 @@ namespace Code {
         };
 
         readonly int[,] EAN = {
-            { 0b001101, 0b100111, 0b111001 },
-            { 0b011001, 0b110011, 0b110011 },
-            { 0b010011, 0b011011, 0b110110 },
-            { 0b111101, 0b100001, 0b100001 },
-            { 0b100011, 0b011101, 0b101110 },
-            { 0b110001, 0b111001, 0b100111 },
-            { 0b101111, 0b000101, 0b101000 },
-            { 0b111011, 0b010001, 0b100010 },
-            { 0b110111, 0b001001, 0b100100 },
-            { 0b001011, 0b010111, 0b111010 }
-        };
-        readonly int[] EAN_P = {
-            0b000000,
-            0b001011,
-            0b001101,
-            0b001110,
-            0b010011,
-            0b011001,
-            0b011100,
-            0b010101,
-            0b010110,
-            0b011010
+            { 0b001101, 0b100111, 0b111001, 0b000000 },
+            { 0b011001, 0b110011, 0b110011, 0b001011 },
+            { 0b010011, 0b011011, 0b110110, 0b001101 },
+            { 0b111101, 0b100001, 0b100001, 0b001110 },
+            { 0b100011, 0b011101, 0b101110, 0b010011 },
+            { 0b110001, 0b111001, 0b100111, 0b011001 },
+            { 0b101111, 0b000101, 0b101000, 0b011100 },
+            { 0b111011, 0b010001, 0b100010, 0b010101 },
+            { 0b110111, 0b001001, 0b100100, 0b010110 },
+            { 0b001011, 0b010111, 0b111010, 0b011010 }
         };
 
         readonly Dictionary<string, int> NW7 = new Dictionary<string, int> {
@@ -126,10 +114,149 @@ namespace Code {
             { ".", 0b110000100 }
         };
 
+        readonly int[] CODE128 = {
+            0x212221, 0x222121, 0x222220, 0x121222, 0x121321,
+            0x131221, 0x122212, 0x122311, 0x132211, 0x221212,
+
+            0x221311, 0x231211, 0x112231, 0x122131, 0x122230,
+            0x113221, 0x123121, 0x123220, 0x223210, 0x221131,
+
+            0x221230, 0x213211, 0x223111, 0x312130, 0x311221,
+            0x321121, 0x321220, 0x312211, 0x322111, 0x322210,
+
+            0x212122, 0x212320, 0x232120, 0x111322, 0x131122,
+            0x131320, 0x112312, 0x132112, 0x132310, 0x211312,
+
+            0x231112, 0x231310, 0x112132, 0x112330, 0x132130,
+            0x113122, 0x113320, 0x133120, 0x313120, 0x211330,
+
+            0x231130, 0x213112, 0x213310, 0x213130, 0x311122,
+            0x311320, 0x331120, 0x312112, 0x312310, 0x332110,
+
+            0x314110, 0x221410, 0x431110, 0x111223, 0x111421,
+            0x121123, 0x121420, 0x141121, 0x141220, 0x112213,
+
+            0x112411, 0x122113, 0x122410, 0x142111, 0x142210,
+            0x241210, 0x221113, 0x413110, 0x241111, 0x134110,
+
+            0x111241, 0x121141, 0x121240, 0x114211, 0x124111,
+            0x124210, 0x411211, 0x421111, 0x421210, 0x212140,
+
+            0x214120, 0x412120, 0x111142, 0x111340, 0x131140,
+            0x114112, 0x114310, 0x411112, 0x411310, 0x113140,
+
+            0x114130, 0x311140, 0x411130, 0x211411, 0x211213,
+            0x211231, 0x2331112
+        };
+        readonly List<string> CODE128_A = new List<string> {
+            " ", "!", "\"", "#", "$",
+            "%", "&", "'", "(", ")",
+
+            "*", "+", ",", "-", ".",
+            "/", "0", "1", "2", "3",
+
+            "4", "5", "6", "7", "8",
+            "9", ":", ";", "<", "=",
+
+            ">", "?", "@", "A", "B",
+            "C", "D", "E", "F", "G",
+
+            "H", "I", "J", "K", "L",
+            "M", "N", "O", "P", "Q",
+
+            "R", "S", "T", "U", "V",
+            "W", "X", "Y", "Z", "[",
+
+            "\\","]", "^", "_", "\0",
+            "SOH", "STX", "ETX", "EOT", "ENQ",
+
+            "ACK", "\a", "\b", "HT", "\n",
+            "VT", "FF", "\r", "SO", "SI",
+
+            "DLE", "DC1", "DC2", "DC3", "DC4",
+            "NAK", "SYN", "ETB", "CAN", "EM",
+
+            "SUB", "ESC", "FS", "GS", "RS",
+            "US", "FNC3", "FNC2", "SHIFT", "CODE_C",
+
+            "CODE_B", "FNC4", "FNC1", "START_A", "START_B",
+            "START_C", "STOP"
+        };
+        readonly List<string> CODE128_B = new List<string> {
+            " ", "!", "\"", "#", "$",
+            "%", "&", "'", "(", ")",
+
+            "*", "+", ",", "-", ".",
+            "/", "0", "1", "2", "3",
+
+            "4", "5", "6", "7", "8",
+            "9", ":", ";", "<", "=",
+
+            ">", "?", "@", "A", "B",
+            "C", "D", "E", "F", "G",
+
+            "H", "I", "J", "K", "L",
+            "M", "N", "O", "P", "Q",
+
+            "R", "S", "T", "U", "V",
+            "W", "X", "Y", "Z", "[",
+
+            "\\","]", "^", "_", "`",
+            "a", "b", "c", "d", "e",
+
+            "f", "g", "h", "i", "j",
+            "k", "l", "m", "n", "o",
+
+            "p", "q", "r", "s", "t",
+            "u", "v", "w", "x", "y",
+
+            "z", "{", "|", "}", "~",
+            "DEL", "FNC3", "FNC2", "SHIFT", "CODE_C",
+
+            "FNC4", "CODE_A", "FNC1", "START_A", "START_B",
+            "START_C", "STOP"
+        };
+        readonly List<string> CODE128_C = new List<string> {
+            "00", "01", "02", "03", "04",
+            "05", "06", "07", "08", "09",
+
+            "10", "11", "12", "13", "14",
+            "15", "16", "17", "18", "19",
+
+            "20", "21", "22", "23", "24",
+            "25", "26", "27", "28", "29",
+
+            "30", "31", "32", "33", "34",
+            "35", "36", "37", "38", "39",
+
+            "40", "41", "42", "43", "44",
+            "45", "46", "47", "48", "49",
+
+            "50", "51", "52", "53", "54",
+            "55", "56", "57", "58", "59",
+
+            "60", "61", "62", "63", "64",
+            "65", "66", "67", "68", "69",
+
+            "70", "71", "72", "73", "74",
+            "75", "76", "77", "78", "79",
+
+            "80", "81", "82", "83", "84",
+            "85", "86", "87", "88", "89",
+
+            "90", "91", "92", "93", "94",
+            "95", "96", "97", "98", "99",
+
+            "CODE_B", "CODE_A", "FNC1", "START_A", "START_B",
+            "START_C", "STOP"
+        };
+
         void Draw() {
             switch (cmbType.SelectedIndex) {
             case 0: {
-                var bmp = DrawCode39(textBox1.Text);
+                numPitch.Increment = 1;
+                numPitch.Value = (int)numPitch.Value;
+                var bmp = DrawCode128(textBox1.Text);
                 panel1.Width = bmp.Width + 25;
                 pictureBox1.Image = bmp;
                 pictureBox1.Width = bmp.Width;
@@ -137,6 +264,16 @@ namespace Code {
                 break;
             }
             case 1: {
+                numPitch.Increment = 0.5m;
+                var bmp = DrawCode39(textBox1.Text);
+                panel1.Width = bmp.Width + 25;
+                pictureBox1.Image = bmp;
+                pictureBox1.Width = bmp.Width;
+                pictureBox1.Height = bmp.Height;
+                break;
+            }
+            case 2: {
+                numPitch.Increment = 0.5m;
                 var bmp = DrawNW7(textBox1.Text);
                 panel1.Width = bmp.Width + 25;
                 pictureBox1.Image = bmp;
@@ -144,16 +281,18 @@ namespace Code {
                 pictureBox1.Height = bmp.Height;
                 break;
             }
-            case 2:
-            case 3: {
-                var bmp = DrawITF(textBox1.Text, 3 == cmbType.SelectedIndex);
+            case 3:
+            case 4: {
+                numPitch.Increment = 0.5m;
+                var bmp = DrawITF(textBox1.Text, 4 == cmbType.SelectedIndex);
                 panel1.Width = bmp.Width + 25;
                 pictureBox1.Image = bmp;
                 pictureBox1.Width = bmp.Width;
                 pictureBox1.Height = bmp.Height;
                 break;
             }
-            case 4: {
+            case 5: {
+                numPitch.Increment = 0.5m;
                 var bmp = DrawEAN(textBox1.Text);
                 panel1.Width = bmp.Width + 25;
                 pictureBox1.Image = bmp;
@@ -171,15 +310,16 @@ namespace Code {
             var h = (float)height;
             var dx = px - x;
             var dw = width - (int)width;
+            var gray = new Pen(Color.FromArgb(95, 0, 0, 0));
             if (0.0 < dx) {
                 g.FillRectangle(Brushes.Black, x + 1, y, w - 1, h);
                 if (0.0 < dw) {
-                    g.DrawLine(new Pen(Color.FromArgb(95, 0, 0, 0)),
+                    g.DrawLine(gray,
                         x + w + 1, y,
                         x + w + 1, y + h - 1
                     );
                 } else {
-                    g.DrawLine(new Pen(Color.FromArgb(141, 0, 0, 0)),
+                    g.DrawLine(gray,
                         x + w, y,
                         x + w, y + h - 1
                     );
@@ -187,7 +327,7 @@ namespace Code {
             } else {
                 if (0.0 < dw) {
                     g.FillRectangle(Brushes.Black, x, y, w - 1, h);
-                    g.DrawLine(new Pen(Color.FromArgb(95, 0, 0, 0)),
+                    g.DrawLine(gray,
                         x + w, y,
                         x + w, y + h - 1
                     );
@@ -198,10 +338,10 @@ namespace Code {
         }
 
         Bitmap DrawCode39(string value) {
-            int borderWeight = chkBorder.Checked ? 6 : 0;
-            float codeNarrow = (float)numPitch.Value;
-            float codeWide = codeNarrow * 3;
-            float spaceWidth = codeNarrow * 13;
+            var borderWeight = chkBorder.Checked ? 6 : 0;
+            var codeNarrow = (float)numPitch.Value;
+            var codeWide = codeNarrow * 3;
+            var spaceWidth = codeNarrow * 13;
 
             var lines = value.Replace("\r", "").Split('\n');
 
@@ -283,11 +423,122 @@ namespace Code {
             return bmp;
         }
 
+        Bitmap DrawCode128(string value) {
+            var borderWeight = chkBorder.Checked ? 6 : 0;
+            var codePitch = (float)numPitch.Value;
+            var spaceWidth = codePitch * 13;
+
+            var lines = value.Replace("\r", "").Split('\n');
+
+            int maxLength = 0;
+            int codeCount = 0;
+            for (int l = 0; l < lines.Length; l++) {
+                var line = lines[l];
+                if (string.IsNullOrWhiteSpace(line)) {
+                    continue;
+                }
+                var length = line.Length;
+                if (maxLength < length) {
+                    maxLength = length;
+                }
+                codeCount++;
+            }
+
+            var bmp = new Bitmap(
+                (int)(maxLength * (codePitch * 11) + codePitch * (11 + 11 + 13) + spaceWidth * 2 + borderWeight),
+                codeCount * (CODE_HEIGHT + SPACE_HEIGHT) + 10
+            );
+            var g = Graphics.FromImage(bmp);
+
+            var posY = SPACE_HEIGHT / 2.0f;
+            for (int l = 0; l < lines.Length; l++) {
+                var line = lines[l];
+                if (string.IsNullOrWhiteSpace(line)) {
+                    continue;
+                }
+
+                var posX = borderWeight / 2.0f;
+
+                /* begin of code */
+                var sum = 0;
+                posX += spaceWidth;
+                var val = CODE128_B.IndexOf("START_B");
+                sum += val;
+                var start = CODE128[val];
+                for (int j = 5; 0 <= j; j--) {
+                    var codeWidth = codePitch * ((start >> (j * 4)) & 0xF);
+                    if (1 == j % 2) {
+                        DrawBar(g, posX, posY, codeWidth, CODE_HEIGHT);
+                    }
+                    posX += codeWidth;
+                }
+
+                /* draw data */
+                var table = CODE128_B;
+                var readLen = 1;
+                for (int i = 0; 1 <= line.Length; i++) {
+                    var chr = line.Substring(0, readLen);
+                    if (!table.Contains(chr)) {
+                        chr = " ";
+                    }
+                    val = table.IndexOf(chr);
+                    sum += val * (i + 1);
+                    var code = CODE128[val];
+                    for (int j = 5; 0 <= j; j--) {
+                        if (5 == j) {
+                            g.DrawString(chr, new Font("MS Gothic", 9.0f), Brushes.Black,
+                                posX, posY + CODE_HEIGHT + borderWeight
+                            );
+                        }
+                        var codeWidth = codePitch * ((code >> (j * 4)) & 0xF);
+                        if (1 == j % 2) {
+                            DrawBar(g, posX, posY, codeWidth, CODE_HEIGHT);
+                        }
+                        posX += codeWidth;
+                    }
+                    posX += codePitch;
+                    line = line.Substring(readLen, line.Length - readLen);
+                }
+
+                /* end of code */
+                sum = sum % 103;
+                var check = CODE128[sum];
+                for (int j = 5; 0 <= j; j--) {
+                    var codeWidth = codePitch * ((check >> (j * 4)) & 0xF);
+                    if (1 == j % 2) {
+                        DrawBar(g, posX, posY, codeWidth, CODE_HEIGHT);
+                    }
+                    posX += codeWidth;
+                }
+                posX += codePitch;
+                val = CODE128[CODE128_B.IndexOf("STOP")];
+                for (int j = 6; 0 <= j; j--) {
+                    var codeWidth = codePitch * ((val >> (j * 4)) & 0xF);
+                    if (0 == j % 2) {
+                        DrawBar(g, posX, posY, codeWidth, CODE_HEIGHT);
+                    }
+                    posX += codeWidth;
+                }
+                posX += spaceWidth;
+
+                /* draw border */
+                if (chkBorder.Checked) {
+                    g.DrawRectangle(new Pen(Brushes.Black, borderWeight),
+                        borderWeight / 2, posY,
+                        posX - borderWeight / 2, CODE_HEIGHT
+                    );
+                }
+
+                posY += CODE_HEIGHT + SPACE_HEIGHT;
+            }
+            return bmp;
+        }
+
         Bitmap DrawNW7(string value) {
-            int borderWeight = chkBorder.Checked ? 6 : 0;
-            float codeNarrow = (float)numPitch.Value;
-            float codeWide = codeNarrow * 3;
-            float spaceWidth = codeNarrow * 13;
+            var borderWeight = chkBorder.Checked ? 6 : 0;
+            var codeNarrow = (float)numPitch.Value;
+            var codeWide = codeNarrow * 3;
+            var spaceWidth = codeNarrow * 13;
 
             var lines = value.Replace("\r", "").Split('\n');
 
@@ -368,10 +619,10 @@ namespace Code {
         }
 
         Bitmap DrawITF(string value, bool itf14) {
-            int borderWeight = chkBorder.Checked ? 6 : 0;
-            float codeNarrow = (float)numPitch.Value;
-            float codeWide = codeNarrow * 3;
-            float spaceWidth = codeNarrow * 13;
+            var borderWeight = chkBorder.Checked ? 6 : 0;
+            var codeNarrow = (float)numPitch.Value;
+            var codeWide = codeNarrow * 3;
+            var spaceWidth = codeNarrow * 13;
 
             var lines = value.Replace("\r", "").Split('\n');
 
@@ -556,7 +807,7 @@ namespace Code {
                     }
                     sum += val * (0 == i % 2 ? 1 : 3);
                     if (0 == i) {
-                        oddEven = EAN_P[val];
+                        oddEven = EAN[val, 3];
                         g.DrawString(chr, new Font("MS Gothic", 9.0f), Brushes.Black,
                             spaceWidth - codePitch * 8, posY + CODE_HEIGHT - 5
                         );
