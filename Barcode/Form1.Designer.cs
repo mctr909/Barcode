@@ -125,6 +125,7 @@
             "CODE39",
             "NW7/CODABAR",
             "ITF",
+            "ITF-14",
             "EAN/JAN"});
             this.cmbType.Location = new System.Drawing.Point(370, 24);
             this.cmbType.Name = "cmbType";
@@ -166,7 +167,7 @@
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.textBox1);
             this.Name = "Form1";
-            this.Text = "Form1";
+            this.Text = "Barcode";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.Resize += new System.EventHandler(this.Form1_Resize);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();

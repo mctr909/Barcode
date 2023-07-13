@@ -144,15 +144,16 @@ namespace Code {
                 pictureBox1.Height = bmp.Height;
                 break;
             }
-            case 2: {
-                var bmp = DrawITF(textBox1.Text);
+            case 2:
+            case 3: {
+                var bmp = DrawITF(textBox1.Text, 3 == cmbType.SelectedIndex);
                 panel1.Width = bmp.Width + 25;
                 pictureBox1.Image = bmp;
                 pictureBox1.Width = bmp.Width;
                 pictureBox1.Height = bmp.Height;
                 break;
             }
-            case 3: {
+            case 4: {
                 var bmp = DrawEAN(textBox1.Text);
                 panel1.Width = bmp.Width + 25;
                 pictureBox1.Image = bmp;
@@ -366,7 +367,7 @@ namespace Code {
             return bmp;
         }
 
-        Bitmap DrawITF(string value) {
+        Bitmap DrawITF(string value, bool itf14) {
             int borderWeight = chkBorder.Checked ? 6 : 0;
             float codeNarrow = (float)numPitch.Value;
             float codeWide = codeNarrow * 3;
@@ -381,13 +382,20 @@ namespace Code {
                 if (string.IsNullOrWhiteSpace(line)) {
                     continue;
                 }
-                var length = line.Length;
-                if (0 != length % 2) {
-                    length++;
+                if (itf14) {
+                    line = line.PadRight(13, '0').Substring(0, 13) + "0";
+                    maxLength = 14;
+                } else {
+                    var length = line.Length;
+                    if (0 != length % 2) {
+                        line += "0";
+                        length++;
+                    }
+                    if (maxLength < length) {
+                        maxLength = length;
+                    }
                 }
-                if (maxLength < length) {
-                    maxLength = length;
-                }
+                lines[l] = line;
                 codeCount++;
             }
 
@@ -403,9 +411,6 @@ namespace Code {
                 if (string.IsNullOrWhiteSpace(line)) {
                     continue;
                 }
-                if (0 != line.Length % 2) {
-                    line += "0";
-                }
 
                 var posX = borderWeight / 2.0f;
 
@@ -417,6 +422,8 @@ namespace Code {
                 posX += codeNarrow * 2;
 
                 /* draw data */
+                var sum = 0;
+                var str = "";
                 for (int i = 0; 2 <= line.Length; i++) {
                     var chr1 = line.Substring(0, 1);
                     var chr2 = line.Substring(1, 1);
@@ -432,8 +439,32 @@ namespace Code {
                     }
                     var code1 = ITF[val1];
                     var code2 = ITF[val2];
+                    if (itf14) {
+                        sum += val1 * 3 + val2;
+                        switch(i) {
+                        case 6:
+                            val2 = sum % 10;
+                            val2 = (10 - val2) % 10;
+                            chr2 = val2.ToString();
+                            code2 = ITF[val2];
+                            str += chr1 + chr2;
+                            str = str.Substring(0, 3) + " "
+                                + str.Substring(3, 5) + " "
+                                + str.Substring(8, 5) + " "
+                                + str.Substring(13, 1);
+                            var font = new Font("MS Gothic", 9.0f);
+                            var w = g.MeasureString(str, font).Width;
+                            g.DrawString(str, font, Brushes.Black,
+                                (bmp.Width - w) / 2.0f, posY + CODE_HEIGHT + borderWeight
+                            );
+                            break;
+                        default:
+                            str += chr1 + chr2;
+                            break;
+                        }
+                    }
                     for (int j = 4; 0 <= j; j--) {
-                        if (4 == j) {
+                        if (!itf14 && 4 == j) {
                             g.DrawString(chr1 + chr2, new Font("MS Gothic", 9.0f), Brushes.Black,
                                 posX, posY + CODE_HEIGHT + borderWeight
                             );
