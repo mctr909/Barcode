@@ -544,15 +544,23 @@ namespace Code {
 
             int maxLength = 0;
             int codeCount = 0;
+            char[] termChar = new char[] { 'a', 'b', 'c', 'd' };
             for (int l = 0; l < lines.Length; l++) {
                 var line = lines[l];
                 if (string.IsNullOrWhiteSpace(line)) {
                     continue;
                 }
+                if (line.Substring(0, 1).ToLower().IndexOfAny(termChar) < 0) {
+                    line = "A" + line;
+                }
+                if (line.Substring(line.Length - 1, 1).ToLower().IndexOfAny(termChar) < 0) {
+                    line += "A";
+                }
                 var length = line.Length;
                 if (maxLength < length) {
                     maxLength = length;
                 }
+                lines[l] = line;
                 codeCount++;
             }
 
