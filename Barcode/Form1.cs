@@ -299,6 +299,16 @@ namespace Code {
                 pictureBox1.Width = bmp.Width;
                 pictureBox1.Height = bmp.Height;
                 break;
+
+            }
+            case 6: {
+                numPitch.Increment = 0.5m;
+                var bmp = QR.Draw(textBox1.Text, (float)numPitch.Value);
+                panel1.Width = bmp.Width + 25;
+                pictureBox1.Image = bmp;
+                pictureBox1.Width = bmp.Width;
+                pictureBox1.Height = bmp.Height;
+                break;
             }
             }
         }

@@ -127,7 +127,8 @@
             "NW7/CODABAR",
             "ITF",
             "ITF-14",
-            "EAN/JAN"});
+            "EAN/JAN",
+            "QR"});
             this.cmbType.Location = new System.Drawing.Point(370, 24);
             this.cmbType.Name = "cmbType";
             this.cmbType.Size = new System.Drawing.Size(115, 20);
