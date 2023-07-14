@@ -613,7 +613,7 @@ class QR {
         var ecx_cnt = new int[4];
         var ecx_pos = new int[4];
         var ecx_poc = new int[4];
-        var eb = new int[20, 4];
+        var eb = new int[20, 5];
 
         int i = 0, j = 0, k = 0, m = 0;
         string ascimatrix = "", err = "";
@@ -646,8 +646,8 @@ class QR {
         }
         ebcnt = 1;
         utf8 = 0;
-        for (i = 0; i < ptext.Length; i++) {
-            if (i > ptext.Length) {
+        for (i = 0; i <= ptext.Length; i++) {
+            if (i >= ptext.Length) {
                 k = -5;
             } else {
                 k = ptext.Substring(i, 1).ToCharArray()[0];
