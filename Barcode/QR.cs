@@ -42,23 +42,21 @@ class QR {
         var v_es = len / blocks;     // ecc block size
         var remain = size % blocks;  // remain bytes
         var v_b2c = blocks - remain; // on block number v_b2c
-        var v_ply = new byte[v_es + 2];
-        v_ply[1] = 1;
+        var v_ply = new byte[v_es + 1];
+        v_ply[0] = 1;
 
-        // pro QR je v_z=0 pro dmx je v_z=1
-        for (int v_x = 2, v_z = 0; v_x <= v_es + 1; v_x++, v_z++) {
-            int pa, pb, rp;
+        for (int v_x = 1, v_z = 0; v_x <= v_es; v_x++, v_z++) {
+            int pa, pb;
             v_ply[v_x] = v_ply[v_x - 1];
-            for (int v_y = v_x - 1; v_y > 1; v_y--) {
+            for (int v_y = v_x - 1; v_y > 0; v_y--) {
                 pb = EXP_LOG[v_z];
                 pa = v_ply[v_y];
-                rp = rsprod(pa, pb);
+                var rp = rsprod(pa, pb);
                 v_ply[v_y] = (byte)(v_ply[v_y - 1] ^ rp);
             }
-            pa = v_ply[1];
+            pa = v_ply[0];
             pb = EXP_LOG[v_z];
-            rp = rsprod(pa, pb);
-            v_ply[1] = (byte)rp;
+            v_ply[0] = (byte)rsprod(pa, pb);
         }
 
         for (int v_b = 0; v_b <= blocks - 1; v_b++) {
@@ -75,7 +73,7 @@ class QR {
             for (int v_x = 0; v_x < v_z; v_x++) {
                 var pa = table[vpo] ^ table[vdo + v_x];
                 for (int v_a = v_es, v_y = vpo; v_a > 0; v_a--, v_y++) {
-                    var pb = v_ply[v_a];
+                    var pb = v_ply[v_a - 1];
                     var rp = rsprod(pa, pb);
                     if (v_a == 1) {
                         table[v_y] = (byte)rp;
