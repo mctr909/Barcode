@@ -6,32 +6,33 @@ class QR {
     const string QRALNUM = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
 
     readonly byte[] EXP_LOG = new byte[513];
+    const int LOG_BEGIN = 256;
 
     QR() {
         // generate reed solomon expTable and logTable
         // QR uses GF256(0x11d) // 0x11d=285 => x^8 + x^4 + x^3 + x^2 + 1
         const int poly = 0x11d;
-        for (int v_y = 0, v_x = 1; v_y <= 255; v_y++) {
-            EXP_LOG[v_y] = (byte)v_x;       // expTable
-            EXP_LOG[v_x + 256] = (byte)v_y; // logTable
-            v_x <<= 1;
-            if (v_x > 255) {
-                v_x ^= poly;
+        for (long y = 0, x = 1; y < 256; y++) {
+            EXP_LOG[y] = (byte)x;             // expTable
+            EXP_LOG[x + LOG_BEGIN] = (byte)y; // logTable
+            x <<= 1;
+            if (x > 255) {
+                x ^= poly;
             }
         }
     }
 
-    void rsprod(int a, int b, out int rp) {
+    int rsprod(int a, int b) {
         if (a > 0 && b > 0) {
-            var idx = EXP_LOG[256 + a] + EXP_LOG[256 + b];
+            var idx = EXP_LOG[LOG_BEGIN + a] + EXP_LOG[LOG_BEGIN + b];
             idx %= 255;
-            rp = EXP_LOG[idx];
+            return EXP_LOG[idx];
         } else {
-            rp = 0;
+            return 0;
         }
     }
 
-    void generateReedSolomon(byte[] table, int size, int len, int blocks) {
+    void generateRS(byte[] table, int size, int len, int blocks) {
         for (int v_x = 1; v_x <= len; v_x++) {
             table[v_x + size] = 0;
         }
@@ -51,12 +52,12 @@ class QR {
             for (int v_y = v_x - 1; v_y > 1; v_y--) {
                 pb = EXP_LOG[v_z];
                 pa = v_ply[v_y];
-                rsprod(pa, pb, out rp);
+                rp = rsprod(pa, pb);
                 v_ply[v_y] = (byte)(v_ply[v_y - 1] ^ rp);
             }
             pa = v_ply[1];
             pb = EXP_LOG[v_z];
-            rsprod(pa, pb, out rp);
+            rp = rsprod(pa, pb);
             v_ply[1] = (byte)rp;
         }
 
@@ -75,8 +76,7 @@ class QR {
                 var pa = table[vpo] ^ table[vdo + v_x];
                 for (int v_a = v_es, v_y = vpo; v_a > 0; v_a--, v_y++) {
                     var pb = v_ply[v_a];
-                    int rp;
-                    rsprod(pa, pb, out rp);
+                    var rp = rsprod(pa, pb);
                     if (v_a == 1) {
                         table[v_y] = (byte)rp;
                     } else {
@@ -87,99 +87,86 @@ class QR {
         }
     }
 
-    void putbits(byte[] parr, ref int ppos, int pa, int plen) {
-        int i, j, l;
-        var x = new byte[7];
-
-        if (plen > 56) return;
-        var dw = (double)pa;
-        l = plen;
-        if (l < 56) {
-            dw *= (long)1 << (56 - l);
+    void putbits(byte[] output, int input, int len, ref int offsetBits) {
+        if (len > 56) {
+            return;
         }
-        i = 0;
-        while (i < 6 && dw > 0) {
+
+        var arr = new byte[7];
+        var dw = (double)input;
+        if (len < 56) {
+            dw *= (long)1 << (56 - len);
+        }
+        for (int i = 0; i < 6 && dw > 0; i++) {
             var w = (long)dw >> 48;
-            x[i] = (byte)(w % 256);
+            arr[i] = (byte)(w % 256);
             dw -= w << 48;
             dw *= 256;
-            l -= 8;
-            i++;
         }
 
-        var b = ppos % 8;
-        i = (ppos / 8) + 1;
-        j = 0;
-        l = plen;
-        while (l > 0) {
+        var offset_b = offsetBits % 8;
+        var offset_i = (offsetBits / 8) + 1;
+        for (int i = 0, l = len; 0 < l; i++, l -= 8) {
             int w;
-            if (j < x.Length) {
-                w = x[j];
-                j++;
+            if (i < arr.Length) {
+                w = arr[i];
             } else {
                 w = 0;
             }
             if (l < 8) {
                 w &= 256 - (1 << (8 - l));
             }
-            if (b > 0) {
-                w *= 1 << (8 - b);
-                parr[i] |= (byte)(w / 256);
-                parr[i + 1] |= (byte)(w & 255);
+            if (offset_b > 0) {
+                w <<= 8 - offset_b;
+                output[offset_i] |= (byte)(w >> 8);
+                output[offset_i + 1] |= (byte)w;
             } else {
-                parr[i] |= (byte)(w & 255);
+                output[offset_i] |= (byte)w;
             }
             if (l < 8) {
-                ppos += l;
-                l = 0;
+                offsetBits += l;
+                l = 0; // break;
             } else {
-                ppos += 8;
-                i++;
-                l -= 8;
+                offsetBits += 8;
+                offset_i++;
             }
         }
     }
 
-    void putbits(byte[] parr, ref int ppos, byte[] pa, int plen) {
-        var b = ppos % 8;
-        var i = ppos / 8;
-        var j = 0;
-        var l = plen;
-        while (l > 0) {
+    int putbits(byte[] output, byte[] input, int len, int offsetBits = 0) {
+        var offset_b = offsetBits % 8;
+        var offset_i = offsetBits / 8;
+        for (int i = 0, l = len; 0 < l; i++, l -= 8) {
             int w;
-            if (j < pa.Length) {
-                w = pa[j];
-                j++;
+            if (i < input.Length) {
+                w = input[i];
             } else {
                 w = 0;
             }
             if (l < 8) {
                 w &= 256 - (1 << (8 - l));
             }
-            if (b > 0) {
-                w *= 1 << (8 - b);
-                parr[i] |= (byte)(w / 256);
-                parr[i + 1] |= (byte)(w & 255);
+            if (offset_b > 0) {
+                w *= 1 << (8 - offset_b);
+                output[offset_i] |= (byte)(w >> 8);
+                output[offset_i + 1] |= (byte)w;
             } else {
-                parr[i] |= (byte)(w & 255);
+                output[offset_i] |= (byte)w;
             }
             if (l < 8) {
-                ppos += l;
-                l = 0;
+                offsetBits += l;
+                l = 0; // break;
             } else {
-                ppos += 8;
-                i++;
-                l -= 8;
+                offsetBits += 8;
+                offset_i++;
             }
         }
+        return offsetBits;
     }
 
-    int numbits(int num) {
-        int a = 1, n = 0;
-        while (a <= num) {
-            a <<= 1;
-            n++;
-        }
+    int countbits(int value) {
+        int v, n;
+        for (v = 1, n = 0; v <= value; v <<= 1, n++) ;
         return n;
     }
 
@@ -188,7 +175,7 @@ class QR {
     // TYPE_INFO_POLY = 0x537  [(ecLevel << 3) | maskPattern] : 5 + 10 = 15 bitu
     // VERSION_INFO_POLY = 0x1f25 : 5 + 12 = 17 bitu
     void bchCalc(ref int data, int poly) {
-        var b = numbits(poly) - 1;
+        var b = countbits(poly) - 1;
         if (data == 0) {
             //data = poly
             return;
@@ -196,7 +183,7 @@ class QR {
         var x = data << b;
         var rv = x;
         while (true) {
-            var n = numbits(rv);
+            var n = countbits(rv);
             if (n <= b) {
                 break;
             }
@@ -814,7 +801,7 @@ class QR {
                 k = (4 << c) + eb[i, 3];
                 break;
             }
-            putbits(encoded1, ref encix1, k, c + 4);
+            putbits(encoded1, k, c + 4, ref encix1);
             j = 0;
             m = eb[i, 2];
             r = 0;
@@ -824,45 +811,45 @@ class QR {
                 if (eb[i, 1] == 1) {
                     r = (r * 10) + ((k - 0x30) % 10);
                     if ((j % 3) == 2) {
-                        putbits(encoded1, ref encix1, r, 10);
+                        putbits(encoded1, r, 10, ref encix1);
                         r = 0;
                     }
                     j++;
                 } else if (eb[i, 1] == 2) {
                     r = (r * 45) + (QRALNUM.IndexOf((char)(k - 1)) % 45);
                     if ((j % 2) == 1) {
-                        putbits(encoded1, ref encix1, r, 11);
+                        putbits(encoded1, r, 11, ref encix1);
                         r = 0;
                     }
                     j++;
                 } else {
                     if (k > 0x1FFFFF) { // FFFF - 1FFFFFFF
                         ch = 0xF0 + (k / 0x40000) % 8;
-                        putbits(encoded1, ref encix1, ch, 8);
+                        putbits(encoded1, ch, 8, ref encix1);
                         ch = 128 + (k / 0x1000) % 64;
-                        putbits(encoded1, ref encix1, ch, 8);
+                        putbits(encoded1, ch, 8, ref encix1);
                         ch = 128 + (k / 64) % 64;
-                        putbits(encoded1, ref encix1, ch, 8);
+                        putbits(encoded1, ch, 8, ref encix1);
                         ch = 128 + k % 64;
-                        putbits(encoded1, ref encix1, ch, 8);
+                        putbits(encoded1, ch, 8, ref encix1);
                         j += 4;
                     } else if (k > 0x7FF) { // 7FF-FFFF 3 bytes
                         ch = 0xE0 + (k / 0x1000) % 16;
-                        putbits(encoded1, ref encix1, ch, 8);
+                        putbits(encoded1, ch, 8, ref encix1);
                         ch = 128 + (k / 64) % 64;
-                        putbits(encoded1, ref encix1, ch, 8);
+                        putbits(encoded1, ch, 8, ref encix1);
                         ch = 128 + k % 64;
-                        putbits(encoded1, ref encix1, ch, 8);
+                        putbits(encoded1, ch, 8, ref encix1);
                         j += 3;
                     } else if (k > 0x7F) { // 2 bytes
                         ch = 0xC0 + (k / 64) % 32;
-                        putbits(encoded1, ref encix1, ch, 8);
+                        putbits(encoded1, ch, 8, ref encix1);
                         ch = 128 + k % 64;
-                        putbits(encoded1, ref encix1, ch, 8);
+                        putbits(encoded1, ch, 8, ref encix1);
                         j += 2;
                     } else {
                         ch = k % 256;
-                        putbits(encoded1, ref encix1, ch, 8);
+                        putbits(encoded1, ch, 8, ref encix1);
                         j++;
                     }
                 }
@@ -870,23 +857,23 @@ class QR {
             switch (eb[i, 1]) {
             case 1:
                 if ((j % 3) == 1) {
-                    putbits(encoded1, ref encix1, r, 4);
+                    putbits(encoded1, r, 4, ref encix1);
                 } else if ((j % 3) == 2) {
-                    putbits(encoded1, ref encix1, r, 7);
+                    putbits(encoded1, r, 7, ref encix1);
                 }
                 break;
             case 2:
                 if ((j % 2) == 1) {
-                    putbits(encoded1, ref encix1, r, 6);
+                    putbits(encoded1, r, 6, ref encix1);
                 }
                 break;
             }
             //MsgBox "blk[" & i & "] t:" & eb(i,1) & "from " & eb(i,2) & " to " & eb(i,3) + eb(i,2) & " bits=" & encix1
         }
 
-        putbits(encoded1, ref encix1, 0, 4); // end of chain
+        putbits(encoded1, 0, 4, ref encix1); // end of chain
         if ((encix1 % 8) != 0) { // round to byte
-            putbits(encoded1, ref encix1, 0, 8 - (encix1 % 8));
+            putbits(encoded1, 0, 8 - (encix1 % 8), ref encix1);
         }
         // padding
         i = (qrp[5] - qrp[3] * qrp[4]) * 8;
@@ -896,11 +883,11 @@ class QR {
         }
         // padding 0xEC,0x11,0xEC,0x11...
         while (encix1 < i) {
-            putbits(encoded1, ref encix1, -5103, 16);
+            putbits(encoded1, -5103, 16, ref encix1);
         }
         // doplnime ECC
         i = qrp[3] * qrp[4]; //ppoly, pmemptr , psize , plen , pblocks
-        generateReedSolomon(encoded1, qrp[5] - i, i, qrp[4]);
+        generateRS(encoded1, qrp[5] - i, i, qrp[4]);
         //Call arr2hexstr(encoded1)
         encix1 = qrp[5];
 
@@ -909,10 +896,9 @@ class QR {
         qrarr[0] = new byte[qrp[2] * 24 + 24];
         qrarr[1] = new byte[qrp[2] * 24 + 24];
         qrarr[0][0] = 0;
-        ch = 0;
         var qrsync1 = new byte[8];
         var qrsync2 = new byte[5];
-        putbits(qrsync1, ref ch, new byte[] { 0xFE, 0x82, 0xBA, 0xBA, 0xBA, 0x82, 0xFE, 0 }, 64);
+        putbits(qrsync1, new byte[] { 0xFE, 0x82, 0xBA, 0xBA, 0xBA, 0x82, 0xFE, 0 }, 64);
         this.mask(qrarr, qrsync1, 8, 0, 0); // sync UL
         this.mask(qrarr, 0, 8, 8, 0); // fmtinfo UL under - bity 14..9 SYNC 8
         this.mask(qrarr, qrsync1, 8, 0, siz - 7); // sync UR ( o bit vlevo )
@@ -955,8 +941,7 @@ class QR {
         }
 
         // other syncs
-        ch = 0;
-        putbits(qrsync2, ref ch, new byte[] { 0x1F, 0x11, 0x15, 0x11, 0x1F }, 40);
+        putbits(qrsync2, new byte[] { 0x1F, 0x11, 0x15, 0x11, 0x1F }, 40);
         ch = 6;
         while (ch > 0 && qrp[6 + ch] == 0) {
             ch--;
