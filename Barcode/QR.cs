@@ -80,7 +80,7 @@ class QR {
                 for (int v_a = v_es, v_y = vpo; v_a > 0; v_a--, v_y++) {
                     var pb = v_ply[v_a - 1];
                     var rp = rsprod(pa, pb);
-                    if (v_a == 1) {
+                    if (v_a == 0) {
                         mEncoded[v_y] = (byte)rp;
                     } else {
                         mEncoded[v_y] = (byte)(mEncoded[v_y + 1] ^ rp);
@@ -275,25 +275,27 @@ class QR {
         return true;
     }
 
-    void maskQrBit(object input, int bits, int pr, int pc) {
+    void maskQrBit(int input, int bits, int row, int col) {
         // max 8 bites wide
-        bool x;
         if (bits > 8 || bits < 1) {
             return;
         }
-        if (input is int) {
-            var w = (int)input;
-            var r = pr;
-            for (int i = 1 << (bits - 1), c = pc; 0 < i; i >>= 1, c++) {
+        bool x;
+        for (int i = 1 << (bits - 1), c = col; 0 < i; i >>= 1, c++) {
+            x = putQrBit(row, c, input & i);
+        }
+    }
+
+    void maskQrBit(byte[] input, int bits, int row, int col) {
+        // max 8 bites wide
+        if (bits > 8 || bits < 1) {
+            return;
+        }
+        bool x;
+        for (int j = 0, r = row; j < input.Length; j++, r++) {
+            var w = (int)input[j];
+            for (int i = 1 << (bits - 1), c = col; 0 < i; i >>= 1, c++) {
                 x = putQrBit(r, c, w & i);
-            }
-        } else if (input is byte[]) {
-            var arr = (byte[])input;
-            for (int j = 0, r = pr; j < arr.Length; j++, r++) {
-                var w = (int)arr[j];
-                for (int i = 1 << (bits - 1), c = pc; 0 < i; i >>= 1, c++) {
-                    x = putQrBit(r, c, w & i);
-                }
             }
         }
     }
@@ -898,14 +900,13 @@ class QR {
         mQrMask[0] = 0;
 
         var qrsync1 = new byte[8];
-        var qrsync2 = new byte[5];
         putBits(qrsync1, new byte[] { 0xFE, 0x82, 0xBA, 0xBA, 0xBA, 0x82, 0xFE, 0 }, 64);
-        maskQrBit(qrsync1, 8, 0, 0); // sync UL
-        maskQrBit(0, 8, 8, 0); // fmtinfo UL under - bity 14..9 SYNC 8
+        maskQrBit(qrsync1, 8, 0, 0);       // sync UL
+        maskQrBit(0, 8, 8, 0);             // fmtinfo UL under - bity 14..9 SYNC 8
         maskQrBit(qrsync1, 8, 0, siz - 7); // sync UR ( o bit vlevo )
-        maskQrBit(0, 8, 8, siz - 8); // fmtinfo UR - bity 7..0
+        maskQrBit(0, 8, 8, siz - 8);       // fmtinfo UR - bity 7..0
         maskQrBit(qrsync1, 8, siz - 7, 0); // sync DL (zasahuje i do quiet zony)
-        maskQrBit(0, 8, siz - 8, 0); // blank nad DL
+        maskQrBit(0, 8, siz - 8, 0);       // blank nad DL
 
         bool x;
         for (i = 0; i <= 6; i++) {
@@ -942,6 +943,7 @@ class QR {
         }
 
         // other syncs
+        var qrsync2 = new byte[5];
         putBits(qrsync2, new byte[] { 0x1F, 0x11, 0x15, 0x11, 0x1F }, 40);
         ch = 6;
         while (ch > 0 && qrp[6 + ch] == 0) {
