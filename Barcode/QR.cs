@@ -90,12 +90,12 @@ class QR {
         }
     }
 
-    void putBits(int input, int len) {
+    void putBits(int value, int len) {
         if (len > 56) {
             return;
         }
         var arr = new byte[7];
-        var dw = (double)input;
+        var dw = (double)value;
         if (len < 56) {
             dw *= (long)1 << (56 - len);
         }
@@ -165,83 +165,6 @@ class QR {
             rv ^= poly << (n - b - 1);
         }
         data = x + rv;
-    }
-
-    void setParams(int pcap, int ecl, int[] rv, int[] ecx_poc) {
-        int i, j;
-        int siz = 0, totby = 0;
-        int syncs = 0, ccsiz = 0, ccblks = 0, ver = 0;
-        //Dim rv(15) as Integer
-        // 1:version, 2:size, 3:ccs, 4:ccb,
-        // 5:totby, 6-12:syncs(7), 13-15:versinfo(3)
-        //ecl:M=0,L=1,H=2,Q=3
-        if (ecl < 0 || ecl > 3) return;
-        for (i = 1; i < rv.Length; i++) {
-            rv[i] = 0;
-        }
-        j = (pcap + 18 * ecx_poc[1] + 17 * ecx_poc[2] + 20 * ecx_poc[3] + 7) / 8;
-        if (ecl == 0 && j > 2334 ||
-            ecl == 1 && j > 2956 ||
-            ecl == 2 && j > 1276 ||
-            ecl == 3 && j > 1666
-        ) {
-            return;
-        }
-        j = (pcap + 14 * ecx_poc[1] + 13 * ecx_poc[2] + 12 * ecx_poc[3] + 7) / 8;
-        for (ver = 1; ver <= 40; ver++) {
-            if (ver == 10) {
-                j = (pcap + 16 * ecx_poc[1] + 15 * ecx_poc[2] + 20 * ecx_poc[3] + 7) / 8;
-            }
-            if (ver == 27) {
-                j = (pcap + 18 * ecx_poc[1] + 17 * ecx_poc[2] + 20 * ecx_poc[3] + 7) / 8;
-            }
-            siz = 4 * ver + 17;
-            i = (ver - 1) * 12 + ecl * 3;
-            var s = SIZE_TABLE.Substring(i, 3);
-            ccsiz = s.Substring(0, 1).ToCharArray()[0] - 65 + 7;
-            ccblks = int.Parse(s.Substring(s.Length - 2, 2));
-            if (ver == 1) {
-                syncs = 0;
-                totby = 26;
-            } else {
-                //syncs = ((Int(ver / 7) + 2) ^ 2) - 3
-                syncs = (ver / 7) + 2;
-                syncs *= syncs;
-                syncs -= 3;
-                totby = siz - 1;
-                totby = ((totby * totby) / 8) - (3 * syncs) - 24;
-                if (ver > 6) totby -= 4;
-                if (syncs == 1) totby--;
-            }
-            //MsgBox "ver:" & ver & " tot: " & totby & " dat:" & (totby - ccsiz * ccblks) & " need:" & j
-            if (totby - ccsiz * ccblks >= j) break;
-        }
-        if (ver > 1) {
-            syncs = (ver / 7) + 2;
-            rv[6] = 6;
-            rv[5 + syncs] = siz - 7;
-            if (syncs > 2) {
-                i = (int)((siz - 13) / 2 / (syncs - 1) + 0.7) * 2;
-                rv[7] = rv[5 + syncs] - i * (syncs - 2);
-                if (syncs > 3) {
-                    for (j = 3; j < syncs; j++) {
-                        rv[5 + j] = rv[4 + j] + i;
-                    }
-                }
-            }
-        }
-        rv[1] = ver;
-        rv[2] = siz;
-        rv[3] = ccsiz;
-        rv[4] = ccblks;
-        rv[5] = totby;
-        if (ver >= 7) {
-            i = ver;
-            bchCalc(ref i, 0x1F25);
-            rv[13] = (i >> 16) & 0xFF;
-            rv[14] = (i >> 8) & 0xFF;
-            rv[15] = i & 0xFF;
-        }
     }
 
     bool putQrBitWithMask(int row, int col, int flag) {
@@ -556,8 +479,8 @@ class QR {
         return score + black_count;
     }
 
-    void addmm(int ecl, int mask, int size) {
-        var k = ecl * 8 + mask;
+    void addmm(int mode, int mask, int size) {
+        var k = mode * 8 + mask;
         // poly: 101 0011 0111
         bchCalc(ref k, 0x537);
         //MsgBox "mask :" & hex(k,3) & " " & hex(k xor &H5412,3)
@@ -585,167 +508,227 @@ class QR {
         }
     }
 
-    string gen(string input, string options) {
+    void setParams(int cap, int mode, int[] ecx_count, out int[] prop) {
+        int size = 0, totby = 0;
+        int syncs = 0, ccsiz = 0, ccblks = 0, ver = 0;
+        //prop:
+        // 1:version, 2:size, 3:ccs, 4:ccb,
+        // 5:totby, 6-12:syncs(7), 13-15:versinfo(3)
+        prop = new int[16];
+        //mode:M=0,L=1,H=2,Q=3
+        if (mode < 0 || mode > 3) {
+            return;
+        }
+        for (int i = 1; i < prop.Length; i++) {
+            prop[i] = 0;
+        }
+        var vs = (cap + 18 * ecx_count[1] + 17 * ecx_count[2] + 20 * ecx_count[3] + 7) / 8;
+        if (mode == 0 && vs > 2334 ||
+            mode == 1 && vs > 2956 ||
+            mode == 2 && vs > 1276 ||
+            mode == 3 && vs > 1666
+        ) {
+            return;
+        }
+        vs = (cap + 14 * ecx_count[1] + 13 * ecx_count[2] + 12 * ecx_count[3] + 7) / 8;
+        for (ver = 1; ver <= 40; ver++) {
+            if (ver == 10) {
+                vs = (cap + 16 * ecx_count[1] + 15 * ecx_count[2] + 20 * ecx_count[3] + 7) / 8;
+            }
+            if (ver == 27) {
+                vs = (cap + 18 * ecx_count[1] + 17 * ecx_count[2] + 20 * ecx_count[3] + 7) / 8;
+            }
+            size = 4 * ver + 17;
+            var i = (ver - 1) * 12 + mode * 3;
+            var s = SIZE_TABLE.Substring(i, 3);
+            ccsiz = s.Substring(0, 1).ToCharArray()[0] - 65 + 7;
+            ccblks = int.Parse(s.Substring(s.Length - 2, 2));
+            if (ver == 1) {
+                syncs = 0;
+                totby = 26;
+            } else {
+                //syncs = ((Int(ver / 7) + 2) ^ 2) - 3
+                syncs = (ver / 7) + 2;
+                syncs *= syncs;
+                syncs -= 3;
+                totby = size - 1;
+                totby = ((totby * totby) / 8) - (3 * syncs) - 24;
+                if (ver > 6)
+                    totby -= 4;
+                if (syncs == 1)
+                    totby--;
+            }
+            //MsgBox "ver:" & ver & " tot: " & totby & " dat:" & (totby - ccsiz * ccblks) & " need:" & j
+            if (totby - ccsiz * ccblks >= vs) {
+                break;
+            }
+        }
+        if (ver > 1) {
+            syncs = (ver / 7) + 2;
+            prop[6] = 6;
+            prop[5 + syncs] = size - 7;
+            if (syncs > 2) {
+                var i = (int)((size - 13) / 2 / (syncs - 1) + 0.7) * 2;
+                prop[7] = prop[5 + syncs] - i * (syncs - 2);
+                if (syncs > 3) {
+                    for (int j = 3; j < syncs; j++) {
+                        prop[5 + j] = prop[4 + j] + i;
+                    }
+                }
+            }
+        }
+        prop[1] = ver;
+        prop[2] = size;
+        prop[3] = ccsiz;
+        prop[4] = ccblks;
+        prop[5] = totby;
+        if (ver >= 7) {
+            var v = ver;
+            bchCalc(ref v, 0x1F25);
+            prop[13] = (v >> 16) & 0xFF;
+            prop[14] = (v >> 8) & 0xFF;
+            prop[15] = v & 0xFF;
+        }
+    }
+
+    int getProp(string input, int mode, out int[] prop, out int[,] eb) {
         var ecx_cnt = new int[4];
         var ecx_pos = new int[4];
-        var ecx_poc = new int[4];
-        var eb = new int[20, 5];
-
-        int i = 0, j = 0, k = 0, m = 0;
-        string err = "";
-
-        int ecl, r, c, mask, utf8, ebcnt;
-        int ch = 0, s = 0, siz = 0;
-
-        //Dim qrpos As Integer
-        var qrp = new int[16]; // 1:version,2:size,3:ccs,4:ccb,5:totby,6-12:syncs(7),13-15:versinfo(3)
-
-        var mode = "M";
-        //i = InStr(poptions, "mode=")
-        if (i > 0) {
-            mode = options.Substring(i + 5, 1);
-        }
-        //M=0,L=1,H=2,Q=3
-        ecl = "MLHQ".IndexOf(mode) - 1;
-        if (ecl < 0) {
-            mode = "M";
-            ecl = 0;
-        }
-        if (input == "") {
-            err = "Not data";
-            return "";
-        }
-        for (i = 0; i < 4; i++) {
-            ecx_pos[i] = 0;
+        var ecx_count = new int[4];
+        for (int i = 0; i < 4; i++) {
             ecx_cnt[i] = 0;
-            ecx_poc[i] = 0;
+            ecx_pos[i] = 0;
+            ecx_count[i] = 0;
         }
-        ebcnt = 1;
-        utf8 = 0;
-        for (i = 0; i <= input.Length; i++) {
-            if (i >= input.Length) {
-                k = -5;
+        eb = new int[20, 5];
+        var ebcnt = 1;
+        var utf8 = 0;
+        for (int idx = 0; idx <= input.Length; idx++) {
+            int m;
+            int byte_count = 0;
+            if (input.Length <= idx) {
+                m = -5;
             } else {
-                var chr = input.Substring(i, 1).ToCharArray()[0];
+                var chr = input.Substring(idx, 1).ToCharArray()[0];
                 if (chr >= 0x1FFFFF) { // FFFF - 1FFFFFFF
-                    m = 4;
-                    k = -1;
+                    byte_count = 4;
+                    m = -1;
                 } else if (chr >= 0x7FF) { // 7FF-FFFF
-                    m = 3;
-                    k = -1;
+                    byte_count = 3;
+                    m = -1;
                 } else {
-                    m = 1;
-                    k = -1;
+                    byte_count = 1;
+                    m = -1;
                 }
                 //} else if (chr >= 128) {
-                //    m = 2;
+                //    byte_count = 2;
                 //    k = -1;
                 //} else {
-                //    m = 1;
+                //    byte_count = 1;
                 //    k = QRALNUM.IndexOf(input.Substring(i, 1));
                 //}
             }
-            if (k < 0) { // bude byte nebo konec
-                if (ecx_cnt[1] >= 9 || (k == -5 && ecx_cnt[1] == ecx_cnt[3])) { // Az dosud bylo mozno pouzitelne numeric
+            if (m < 0) { // bude byte nebo konec
+                if (ecx_cnt[1] >= 9 || (m == -5 && ecx_cnt[1] == ecx_cnt[3])) { // Az dosud bylo mozno pouzitelne numeric
                     if ((ecx_cnt[2] - ecx_cnt[1]) >= 8 || (ecx_cnt[3] == ecx_cnt[2])) { // pred num je i pouzitelny alnum
                         if (ecx_cnt[3] > ecx_cnt[2]) { // Jeste pred alnum bylo byte
                             eb[ebcnt, 1] = 3;          // Typ byte
                             eb[ebcnt, 2] = ecx_pos[3]; // pozice
                             eb[ebcnt, 3] = ecx_cnt[3] - ecx_cnt[2]; // delka
                             ebcnt++;
-                            ecx_poc[3]++;
+                            ecx_count[3]++;
                         }
                         eb[ebcnt, 1] = 2;         // Typ alnum
                         eb[ebcnt, 2] = ecx_pos[2];
                         eb[ebcnt, 3] = ecx_cnt[2] - ecx_cnt[1]; // delka
                         ebcnt++;
-                        ecx_poc[2]++;
+                        ecx_count[2]++;
                         ecx_cnt[2] = 0;
                     } else if (ecx_cnt[3] > ecx_cnt[1]) { // byly bytes pred numeric
                         eb[ebcnt, 1] = 3;          // Typ byte
                         eb[ebcnt, 2] = ecx_pos[3]; // pozice
                         eb[ebcnt, 3] = ecx_cnt[3] - ecx_cnt[1]; // delka
                         ebcnt++;
-                        ecx_poc[3]++;
+                        ecx_count[3]++;
                     }
-                } else if ((ecx_cnt[2] >= 8) || (k == -5 && ecx_cnt[2] == ecx_cnt[3])) { // Az dosud bylo mozno pouzitelne alnum
+                } else if ((ecx_cnt[2] >= 8) || (m == -5 && ecx_cnt[2] == ecx_cnt[3])) { // Az dosud bylo mozno pouzitelne alnum
                     if (ecx_cnt[3] > ecx_cnt[2]) { // Jeste pred alnum bylo byte
                         eb[ebcnt, 1] = 3;          // Typ byte
                         eb[ebcnt, 2] = ecx_pos[3]; // pozice
                         eb[ebcnt, 3] = ecx_cnt[3] - ecx_cnt[2]; // delka
                         ebcnt++;
-                        ecx_poc[3]++;
+                        ecx_count[3]++;
                     }
                     eb[ebcnt, 1] = 2;          // Typ alnum
                     eb[ebcnt, 2] = ecx_pos[2];
                     eb[ebcnt, 3] = ecx_cnt[2]; // delka
                     ebcnt++;
-                    ecx_poc[2]++;
+                    ecx_count[2]++;
                     ecx_cnt[3] = 0;
                     ecx_cnt[2] = 0; // vse zpracovano
-                } else if (k == -5 && ecx_cnt[3] > 0) { // konec ale mam co ulozit
+                } else if (m == -5 && ecx_cnt[3] > 0) { // konec ale mam co ulozit
                     eb[ebcnt, 1] = 3;          // Typ byte
                     eb[ebcnt, 2] = ecx_pos[3]; // pozice
                     eb[ebcnt, 3] = ecx_cnt[3]; // delka
                     ebcnt++;
-                    ecx_poc[3]++;
+                    ecx_count[3]++;
                 }
             }
-            if (k == -5) {
+            if (m == -5) {
                 break;
             }
-            if (k >= 0) { // Muzeme alnum
-                if (k >= 10 && ecx_cnt[1] >= 12) { // Az dosud bylo mozno num
+            if (m >= 0) { // Muzeme alnum
+                if (m >= 10 && ecx_cnt[1] >= 12) { // Az dosud bylo mozno num
                     if ((ecx_cnt[2] - ecx_cnt[1]) >= 8 || (ecx_cnt[3] == ecx_cnt[2])) { // Je tam i alnum ktery stoji za to
                         if (ecx_cnt[3] > ecx_cnt[2]) { // Jeste pred alnum bylo byte
                             eb[ebcnt, 1] = 3;          // Typ byte
                             eb[ebcnt, 2] = ecx_pos[3]; // pozice
                             eb[ebcnt, 3] = ecx_cnt[3] - ecx_cnt[2]; // delka
                             ebcnt++;
-                            ecx_poc[3]++;
+                            ecx_count[3]++;
                         }
                         eb[ebcnt, 1] = 2;          // Typ alnum
                         eb[ebcnt, 2] = ecx_pos[2];
                         eb[ebcnt, 3] = ecx_cnt[2] - ecx_cnt[1]; // delka
                         ebcnt++;
-                        ecx_poc[2]++;
+                        ecx_count[2]++;
                         ecx_cnt[2] = 0; // vse zpracovano
                     } else if (ecx_cnt[3] > ecx_cnt[1]) { // Pred Num je byte
                         eb[ebcnt, 1] = 3;          // Typ byte
                         eb[ebcnt, 2] = ecx_pos[3]; // pozice
                         eb[ebcnt, 3] = ecx_cnt[3] - ecx_cnt[1]; // delka
                         ebcnt++;
-                        ecx_poc[3]++;
+                        ecx_count[3]++;
                     }
                     eb[ebcnt, 1] = 1;          // Typ numerix
                     eb[ebcnt, 2] = ecx_pos[1];
                     eb[ebcnt, 3] = ecx_cnt[1]; // delka
                     ebcnt++;
-                    ecx_poc[1] = ecx_poc[1] + 1;
+                    ecx_count[1]++;
                     ecx_cnt[1] = 0;
                     ecx_cnt[2] = 0;
                     ecx_cnt[3] = 0; // vse zpracovano
                 }
                 if (ecx_cnt[2] == 0) {
-                    ecx_pos[2] = i;
+                    ecx_pos[2] = idx;
                 }
                 ecx_cnt[2]++;
             } else { // mozno alnum
                 ecx_cnt[2] = 0;
             }
-            if (k >= 0 && k < 10) { // muze byt numeric
+            if (m >= 0 && m < 10) { // muze byt numeric
                 if (ecx_cnt[1] == 0) {
-                    ecx_pos[1] = i;
+                    ecx_pos[1] = idx;
                 }
                 ecx_cnt[1]++;
             } else {
                 ecx_cnt[1] = 0;
             }
             if (ecx_cnt[3] == 0) {
-                ecx_pos[3] = i;
+                ecx_pos[3] = idx;
             }
-            ecx_cnt[3] += m;
-            utf8 += m;
+            ecx_cnt[3] += byte_count;
+            utf8 += byte_count;
             if (ebcnt >= 16) { // Uz by se mi tri dalsi bloky stejne nevesli
                 ecx_cnt[1] = 0;
                 ecx_cnt[2] = 0;
@@ -754,30 +737,58 @@ class QR {
         }
         ebcnt--;
 
-        c = 0;
-        for (i = 1; i <= ebcnt; i++) {
+        var cap = 0;
+        for (int i = 1; i <= ebcnt; i++) {
             switch (eb[i, 1]) {
             case 1:
-                eb[i, 4] = (eb[i, 3] / 3) * 10 + (eb[i, 3] % 3) * 3 + ((eb[i, 3] % 3) > 0 ? 1 : 0); break;
+                eb[i, 4] = (eb[i, 3] / 3) * 10 + (eb[i, 3] % 3) * 3 + ((eb[i, 3] % 3) > 0 ? 1 : 0);
+                break;
             case 2:
-                eb[i, 4] = (eb[i, 3] / 2) * 11 + (eb[i, 3] % 2) * 6; break;
+                eb[i, 4] = (eb[i, 3] / 2) * 11 + (eb[i, 3] % 2) * 6;
+                break;
             case 3:
-                eb[i, 4] = eb[i, 3] * 8; break;
+                eb[i, 4] = eb[i, 3] * 8;
+                break;
             }
-            c += eb[i, 4];
+            cap += eb[i, 4];
         }
         // UTF-8 is default not need ECI value - zxing cannot recognize
-        //Call qr_params(i * 8 + utf8,mode,qrp)
-        setParams(c, ecl, qrp, ecx_poc);
-        if (qrp[1] <= 0) {
-            err = "Too long";
+        //setParams(cap * 8 + utf8,mode,qrp);
+        setParams(cap, mode, ecx_count, out prop);
+        if (prop[1] <= 0) {
+            // Too long;
+            return 0;
+        }
+        return ebcnt;
+    }
+
+    string gen(string input, string options) {
+        if (input == "") {
+            // Not data
             return "";
         }
-        siz = qrp[2];
-        //MsgBox "ver:" & qrp(1) & mode & " size " & siz & " ecc:" & qrp(3) & "x" & qrp(4) & " d:" & (qrp(5) - qrp(3) * qrp(4))
+
+        // M=0,L=1,H=2,Q=3
+        int mode;
+        {
+            var m = "M";
+            var idx = options.IndexOf("mode=");
+            if (0 <= idx) {
+                m = options.Substring(idx + 5, 1);
+            }
+            mode = "MLHQ".IndexOf(m);
+            if (mode < 0) {
+                mode = 0;
+            }
+        }
+
+        int[] prop;
+        int[,] eb;
+        var ebcnt = getProp(input, mode, out prop, out eb);
+        var size = prop[2];
 
         mEncIdx = 0;
-        mEncoded = new byte[qrp[5] + 1];
+        mEncoded = new byte[prop[5] + 1];
         // byte mode (ASCII) all max 3200 bytes
         // mode indicator (1=num,2=AlNum,4=Byte,8=kanji,ECI=7)
         //      mode: Byte Alhanum  Numeric  Kanji
@@ -789,84 +800,87 @@ class QR {
         //   k = &H700 + 26 ' UTF - 8 = 26; Win1250 = 21; 8859 - 2 = 4 viz http://strokescribe.com/en/ECI.html
         //   putBits(k, 12)
         // End If
-        for (i = 1; i <= ebcnt; i++) {
+        for (int i = 1; i <= ebcnt; i++) {
             switch (eb[i, 1]) {
-            case 1:
-                c = qrp[1] < 10 ? 10 : (qrp[1] < 27 ? 12 : 14);
-                k = (1 << c) + eb[i, 3];
-                break;
-            case 2:
-                c = qrp[1] < 10 ? 9 : (qrp[1] < 27 ? 11 : 13);
-                k = (2 << c) + eb[i, 3];
-                break;
-            case 3:
-                c = qrp[1] < 10 ? 8 : 16;
-                k = (4 << c) + eb[i, 3];
+            case 1: {
+                var l = prop[1] < 10 ? 10 : (prop[1] < 27 ? 12 : 14);
+                var v = (1 << l) + eb[i, 3];
+                putBits(v, l + 4);
                 break;
             }
-            putBits(k, c + 4);
-            j = 0;
-            m = eb[i, 2];
-            r = 0;
-            while (j < eb[i, 3]) {
-                k = input.Substring(m, 1).ToCharArray()[0];
-                m++;
+            case 2: {
+                var l = prop[1] < 10 ? 9 : (prop[1] < 27 ? 11 : 13);
+                var v = (2 << l) + eb[i, 3];
+                putBits(v, l + 4);
+                break;
+            }
+            case 3: {
+                var l = prop[1] < 10 ? 8 : 16;
+                var v = (4 << l) + eb[i, 3];
+                putBits(v, l + 4);
+                break;
+            }
+            }
+            var r = 0;
+            var byte_count = 0;
+            for (int idx = eb[i, 2]; byte_count < eb[i, 3]; idx++) {
+                var chr = input.Substring(idx, 1).ToCharArray()[0];
                 if (eb[i, 1] == 1) {
-                    r = (r * 10) + ((k - 0x30) % 10);
-                    if ((j % 3) == 2) {
+                    r = (r * 10) + ((chr - 0x30) % 10);
+                    if ((byte_count % 3) == 2) {
                         putBits(r, 10);
                         r = 0;
                     }
-                    j++;
+                    byte_count++;
                 } else if (eb[i, 1] == 2) {
-                    r = (r * 45) + (QRALNUM.IndexOf((char)k) % 45);
-                    if ((j % 2) == 1) {
+                    r = (r * 45) + (QRALNUM.IndexOf(chr) % 45);
+                    if ((byte_count % 2) == 1) {
                         putBits(r, 11);
                         r = 0;
                     }
-                    j++;
+                    byte_count++;
                 } else {
-                    if (k > 0x1FFFFF) { // FFFF - 1FFFFFFF
-                        ch = 0xF0 + (k / 0x40000) % 8;
-                        putBits(ch, 8);
-                        ch = 128 + (k / 0x1000) % 64;
-                        putBits(ch, 8);
-                        ch = 128 + (k / 64) % 64;
-                        putBits(ch, 8);
-                        ch = 128 + k % 64;
-                        putBits(ch, 8);
-                        j += 4;
-                    } else if (k > 0x7FF) { // 7FF-FFFF 3 bytes
-                        ch = 0xE0 + (k / 0x1000) % 16;
-                        putBits(ch, 8);
-                        ch = 128 + (k / 64) % 64;
-                        putBits(ch, 8);
-                        ch = 128 + k % 64;
-                        putBits(ch, 8);
-                        j += 3;
-                    } else if (k > 0x7F) { // 2 bytes
-                        ch = 0xC0 + (k / 64) % 32;
-                        putBits(ch, 8);
-                        ch = 128 + k % 64;
-                        putBits(ch, 8);
-                        j += 2;
+                    if (chr > 0x1FFFFF) { // FFFF - 1FFFFFFF
+                        var v = 0xF0 + ((chr >> 18) & 0x07);
+                        putBits(v, 8);
+                        v = 0x80 + ((chr >> 12) & 0x3F);
+                        putBits(v, 8);
+                        v = 0x80 + ((chr >> 6) & 0x3F);
+                        putBits(v, 8);
+                        v = 0x80 + (chr & 0x3F);
+                        putBits(v, 8);
+                        byte_count += 4;
+                    } else if (chr > 0x7FF) { // 7FF-FFFF 3 bytes
+                        var v = 0xE0 + ((chr >> 12) & 0x0F);
+                        putBits(v, 8);
+                        v = 0x80 + ((chr >> 6) & 0x3F);
+                        putBits(v, 8);
+                        v = 0x80 + (chr & 0x3F);
+                        putBits(v, 8);
+                        byte_count += 3;
+                    } else if (chr > 0x7F) { // 2 bytes
+                        var v = 0xC0 + ((chr >> 6) & 0x3F);
+                        putBits(v, 8);
+                        v = 0x80 + (chr & 0x3F);
+                        putBits(v, 8);
+                        byte_count += 2;
                     } else {
-                        ch = k % 256;
-                        putBits(ch, 8);
-                        j++;
+                        var v = chr & 0xFF;
+                        putBits(v, 8);
+                        byte_count++;
                     }
                 }
             }
             switch (eb[i, 1]) {
             case 1:
-                if ((j % 3) == 1) {
+                if (1 == (byte_count % 3)) {
                     putBits(r, 4);
-                } else if ((j % 3) == 2) {
+                } else if (2 == (byte_count % 3)) {
                     putBits(r, 7);
                 }
                 break;
             case 2:
-                if ((j % 2) == 1) {
+                if (1 == (byte_count % 2)) {
                     putBits(r, 6);
                 }
                 break;
@@ -879,129 +893,136 @@ class QR {
             putBits(0, 8 - (mEncIdx % 8));
         }
         // padding
-        i = (qrp[5] - qrp[3] * qrp[4]) * 8;
-        if (mEncIdx > i) {
-            err = "Encode length error";
+        var enc_len = (prop[5] - prop[3] * prop[4]) * 8;
+        if (mEncIdx > enc_len) {
+            // Encode length error
             return "";
         }
         // padding 0xEC,0x11,0xEC,0x11...
-        while (mEncIdx < i) {
+        while (mEncIdx < enc_len) {
             putBits(-5103, 16);
         }
         // doplnime ECC
-        i = qrp[3] * qrp[4]; //ppoly, pmemptr , psize , plen , pblocks
-        generateRS(qrp[5] - i, i, qrp[4]);
+        var ecc_len = prop[3] * prop[4]; //ppoly, pmemptr , psize , plen , pblocks
+        generateRS(prop[5] - ecc_len, ecc_len, prop[4]);
         //Call arr2hexstr(mEncoded)
-        mEncIdx = qrp[5];
+        mEncIdx = prop[5];
 
         // Pole pro vystup
-        mQrData = new byte[qrp[2] * 24 + 24];
-        mQrMask = new byte[qrp[2] * 24 + 24];
+        mQrData = new byte[prop[2] * 24 + 24];
+        mQrMask = new byte[prop[2] * 24 + 24];
         mQrMask[0] = 0;
 
         var qrsync1 = new byte[8];
         putBits(qrsync1, new byte[] { 0xFE, 0x82, 0xBA, 0xBA, 0xBA, 0x82, 0xFE, 0 }, 64);
         maskQrBit(qrsync1, 8, 0, 0);       // sync UL
         maskQrBit(0, 8, 8, 0);             // fmtinfo UL under - bity 14..9 SYNC 8
-        maskQrBit(qrsync1, 8, 0, siz - 7); // sync UR ( o bit vlevo )
-        maskQrBit(0, 8, 8, siz - 8);       // fmtinfo UR - bity 7..0
-        maskQrBit(qrsync1, 8, siz - 7, 0); // sync DL (zasahuje i do quiet zony)
-        maskQrBit(0, 8, siz - 8, 0);       // blank nad DL
+        maskQrBit(qrsync1, 8, 0, size - 7); // sync UR ( o bit vlevo )
+        maskQrBit(0, 8, 8, size - 8);       // fmtinfo UR - bity 7..0
+        maskQrBit(qrsync1, 8, size - 7, 0); // sync DL (zasahuje i do quiet zony)
+        maskQrBit(0, 8, size - 8, 0);       // blank nad DL
 
         bool x;
-        for (i = 0; i <= 6; i++) {
+        for (int i = 0; i <= 6; i++) {
             x = putQrBit(i, 8, 0);           // svisle fmtinfo UL - bity 0..5 SYNC 6,7
-            x = putQrBit(i, siz - 8, 0);     // svisly blank pred UR
-            x = putQrBit(siz - 1 - i, 8, 0); // svisle fmtinfo DL - bity 14..8
+            x = putQrBit(i, size - 8, 0);     // svisly blank pred UR
+            x = putQrBit(size - 1 - i, 8, 0); // svisle fmtinfo DL - bity 14..8
         }
         x = putQrBit(7, 8, 0);       // svisle fmtinfo UL - bity 0..5 SYNC 6,7
-        x = putQrBit(7, siz - 8, 0); // svisly blank pred UR
+        x = putQrBit(7, size - 8, 0); // svisly blank pred UR
         x = putQrBit(8, 8, 0);       // svisle fmtinfo UL - bity 0..5 SYNC 6,7
-        x = putQrBit(siz - 8, 8, 1); // black dot DL
-        if (qrp[13] != 0 || qrp[14] != 0) { // versioninfo
+        x = putQrBit(size - 8, 8, 1); // black dot DL
+        if (prop[13] != 0 || prop[14] != 0) { // versioninfo
             // UR ver 0 1 2;3 4 5;...;15 16 17
             // LL ver 0 3 6 9 12 15;1 4 7 10 13 16; 2 5 8 11 14 17
-            k = 65536 * qrp[13] + 256 * qrp[14] + 1 * qrp[15];
-            c = 0; r = 0;
-            for (i = 0; i <= 17; i++) {
-                ch = k % 2;
-                x = putQrBit(r, siz - 11 + c, ch); // UR ver
-                x = putQrBit(siz - 11 + c, r, ch); // DL ver
+            var v = 65536 * prop[13] + 256 * prop[14] + 1 * prop[15];
+            var c = 0;
+            var r = 0;
+            for (int i = 0; i <= 17; i++) {
+                var f = v % 2;
+                x = putQrBit(r, size - 11 + c, f); // UR ver
+                x = putQrBit(size - 11 + c, r, f); // DL ver
                 c++;
                 if (c > 2) {
                     c = 0;
                     r++;
                 }
-                k >>= 1;
+                f >>= 1;
             }
         }
-        c = 1;
-        for (i = 8; i <= siz - 9; i++) { // sync lines
-            x = putQrBit(i, 6, c); // vertical on column 6
-            x = putQrBit(6, i, c); // horizontal on row 6
-            c = (c + 1) % 2;
+        {
+            var c = 1;
+            for (int i = 8; i <= size - 9; i++) { // sync lines
+                x = putQrBit(i, 6, c); // vertical on column 6
+                x = putQrBit(6, i, c); // horizontal on row 6
+                c = (c + 1) % 2;
+            }
         }
 
         // other syncs
         var qrsync2 = new byte[5];
         putBits(qrsync2, new byte[] { 0x1F, 0x11, 0x15, 0x11, 0x1F }, 40);
-        ch = 6;
-        while (ch > 0 && qrp[6 + ch] == 0) {
-            ch--;
-        }
-        if (ch > 0) {
-            for (c = 0; c <= ch; c++) {
-                for (r = 0; r <= ch; r++) {
-                    // corners
-                    if ((c != 0 || r != 0) && (c != ch || r != 0) && (c != 0 || r != ch)) {
-                        maskQrBit(qrsync2, 5, qrp[r + 6] - 2, qrp[c + 6] - 2);
+        {
+            var ch = 6;
+            while (ch > 0 && prop[6 + ch] == 0) {
+                ch--;
+            }
+            if (ch > 0) {
+                for (int c = 0; c <= ch; c++) {
+                    for (int r = 0; r <= ch; r++) {
+                        // corners
+                        if ((c != 0 || r != 0) && (c != ch || r != 0) && (c != 0 || r != ch)) {
+                            maskQrBit(qrsync2, 5, prop[r + 6] - 2, prop[c + 6] - 2);
+                        }
                     }
                 }
             }
         }
 
         // vyplni pole parr (size x 24 bytes) z pole pb pdlen = pocet dbytes, pblocks = bloku, ptlen celkem
-        fillQrBit(siz, qrp[4], qrp[5] - qrp[3] * qrp[4], qrp[5]);
-        mask = 8; // auto
-        i = options.IndexOf("mask=");
-        if (i >= 0) {
-            mask = options.Substring(i + 5, 1).ToCharArray()[0];
+        fillQrBit(size, prop[4], prop[5] - prop[3] * prop[4], prop[5]);
+        var mask = 8; // auto
+        {
+            var m = options.IndexOf("mask=");
+            if (0 <= m) {
+                mask = options.Substring(m + 5, 1).ToCharArray()[0];
+            }
         }
-
         if (mask < 0 || mask > 7) {
-            j = -1;
+            var m = 0;
+            var s = -1;
             for (mask = 0; mask <= 7; mask++) {
-                addmm(ecl, mask, siz);
-                i = xormask(siz, mask, false);
-                //MsgBox "score mask " & mask & " is " & i
-                if (i < j || j == -1) {
-                    j = i;
-                    s = mask;
+                addmm(mode, mask, size);
+                var score = xormask(size, mask, false);
+                if (score < s || s == -1) {
+                    s = score;
+                    m = mask;
                 }
             }
-            mask = s;
-            //MsgBox "best is " & mask & " with score " & j
+            //MessageBox.Show("best is " + m + " with score " + s);
+            mask = m;
         }
-        addmm(ecl, mask, siz);
-
-        i = xormask(siz, mask, true);
+        addmm(mode, mask, size);
+        xormask(size, mask, true);
 
         var ascimatrix = "";
-        for (r = 0; r <= siz; r += 2) {
-            s = 0;
-            for (c = 0; c <= siz; c += 2) {
-                if ((c % 8) == 0) {
-                    ch = mQrData[s + 24 * r];
-                    if (r < siz) {
-                        i = mQrData[s + 24 * (r + 1)];
+        for (int r = 0; r <= size; r += 2) {
+            var score = 0;
+            var s = 0;
+            var v = 0;
+            for (int c = 0; c <= size; c += 2) {
+                if (0 == (c % 8)) {
+                    v = mQrData[s + 24 * r];
+                    if (r < size) {
+                        score = mQrData[s + 24 * (r + 1)];
                     } else {
-                        i = 0;
+                        score = 0;
                     }
                     s++;
                 }
-                ascimatrix += ((char)('a' + (ch % 4) + 4 * (i % 4))).ToString();
-                ch >>= 2;
-                i >>= 2;
+                ascimatrix += ((char)('a' + (v % 4) + 4 * (score % 4))).ToString();
+                v >>= 2;
+                score >>= 2;
             }
             ascimatrix += "\n";
         }
