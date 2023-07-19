@@ -42,48 +42,45 @@ class QR {
             mEncoded[v_x + size] = 0;
         }
 
-        // qr code has first x blocks shorter than lasts
-        var v_bs = size / blocks;    // shorter block size
-        var v_es = len / blocks;     // ecc block size
-        var remain = size % blocks;  // remain bytes
-        var v_b2c = blocks - remain; // on block number v_b2c
-        var v_ply = new byte[v_es + 1];
-        v_ply[0] = 1;
+        var sz_d = size / blocks;       // shorter block size
+        var sz_e = len / blocks;        // ecc block size
+        var remain = size % blocks;     // remain bytes
+        var onblocks = blocks - remain; // on block number
 
-        for (int v_x = 1, v_z = 0; v_x <= v_es; v_x++, v_z++) {
-            int pa, pb;
-            v_ply[v_x] = v_ply[v_x - 1];
-            for (int v_y = v_x - 1; v_y > 0; v_y--) {
-                pb = EXP_LOG[v_z];
-                pa = v_ply[v_y];
+        var ply = new byte[sz_e + 1];
+        ply[0] = 1;
+        for (int j = 1, je = 0; j <= sz_e; j++, je++) {
+            int pa;
+            var pb = EXP_LOG[je];
+            ply[j] = ply[j - 1];
+            for (int i = j - 1; 0 < i; i--) {
+                pa = ply[i];
                 var rp = rsprod(pa, pb);
-                v_ply[v_y] = (byte)(v_ply[v_y - 1] ^ rp);
+                ply[i] = (byte)(ply[i - 1] ^ rp);
             }
-            pa = v_ply[0];
-            pb = EXP_LOG[v_z];
-            v_ply[0] = (byte)rsprod(pa, pb);
+            pa = ply[0];
+            ply[0] = (byte)rsprod(pa, pb);
         }
-
-        for (int v_b = 0; v_b <= blocks - 1; v_b++) {
-            var vpo = v_b * v_es + size; // ECC start
-            var vdo = v_b * v_bs;        // data start
-            if (v_b > v_b2c) {
-                vdo += v_b - v_b2c; // x longers before
+        for (int b = 0; b <= blocks - 1; b++) {
+            var bd = sz_d * b;        // begin of data
+            var be = sz_e * b + size; // begin of ECC
+            if (b > onblocks) {
+                bd += b - onblocks;
             }
             // generate "nc" checkwords in the array
-            var v_z = v_bs;
-            if (v_b >= v_b2c) {
-                v_z++;
+            var sz = sz_d;
+            if (b >= onblocks) {
+                sz++;
             }
-            for (int v_x = 0; v_x < v_z; v_x++) {
-                var pa = mEncoded[vpo] ^ mEncoded[vdo + v_x];
-                for (int v_a = v_es, v_y = vpo; v_a > 0; v_a--, v_y++) {
-                    var pb = v_ply[v_a - 1];
+            for (int cnt_d = 0, idx_d = bd; cnt_d < sz; cnt_d++, idx_d++) {
+                var pa = mEncoded[be] ^ mEncoded[idx_d];
+                for (int cnt_e = sz_e - 1, idx_e = be; 0 <= cnt_e; cnt_e--, idx_e++) {
+                    var pb = ply[cnt_e];
                     var rp = rsprod(pa, pb);
-                    if (v_a == 0) {
-                        mEncoded[v_y] = (byte)rp;
+                    if (0 == cnt_e) {
+                        mEncoded[idx_e] = (byte)rp;
                     } else {
-                        mEncoded[v_y] = (byte)(mEncoded[v_y + 1] ^ rp);
+                        mEncoded[idx_e] = (byte)(mEncoded[idx_e + 1] ^ rp);
                     }
                 }
             }
@@ -94,16 +91,16 @@ class QR {
         if (len > 56) {
             return;
         }
-        var arr = new byte[7];
-        var dw = (double)value;
+        var dv = (double)value;
         if (len < 56) {
-            dw *= (long)1 << (56 - len);
+            dv *= (long)1 << (56 - len);
         }
-        for (int i = 0; i < 6 && dw > 0; i++) {
-            var w = (long)dw >> 48;
-            arr[i] = (byte)(w % 256);
-            dw -= w << 48;
-            dw *= 256;
+        var arr = new byte[7];
+        for (int i = 0; i < 6 && 0 < dv; i++) {
+            var w = (long)dv >> 48;
+            arr[i] = (byte)w;
+            dv -= w << 48;
+            dv *= 256;
         }
         mEncIdx = putBits(mEncoded, arr, len, mEncIdx);
     }
@@ -122,7 +119,7 @@ class QR {
                 w &= 256 - (1 << (8 - l));
             }
             if (offset_b > 0) {
-                w *= 1 << (8 - offset_b);
+                w <<= 8 - offset_b;
                 output[offset_i] |= (byte)(w >> 8);
                 output[offset_i + 1] |= (byte)w;
             } else {
