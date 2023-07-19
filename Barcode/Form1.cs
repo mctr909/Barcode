@@ -9,6 +9,7 @@ namespace Code {
     public partial class Form1 : Form {
         const int CODE_HEIGHT = 40;
         const int SPACE_HEIGHT = 40;
+        const int BORDER_WEIGHT = 6;
 
         public Form1() {
             InitializeComponent();
@@ -114,141 +115,145 @@ namespace Code {
             { ".", 0b110000100 }
         };
 
-        readonly int[] CODE128 = {
-            0x212221, 0x222121, 0x222220, 0x121222, 0x121321,
-            0x131221, 0x122212, 0x122311, 0x132211, 0x221212,
+        static readonly int[] CODE128 = {
+            0x212222, 0x222122, 0x222221, 0x121223,
+            0x121322, 0x131222, 0x122213, 0x122312,
+            0x132212, 0x221213, 0x221312, 0x231212,
+            0x112232, 0x122132, 0x122231, 0x113222,
 
-            0x221311, 0x231211, 0x112231, 0x122131, 0x122230,
-            0x113221, 0x123121, 0x123220, 0x223210, 0x221131,
+            0x123122, 0x123221, 0x223211, 0x221132,
+            0x221231, 0x213212, 0x223112, 0x312131,
+            0x311222, 0x321122, 0x321221, 0x312212,
+            0x322112, 0x322211, 0x212123, 0x212321,
 
-            0x221230, 0x213211, 0x223111, 0x312130, 0x311221,
-            0x321121, 0x321220, 0x312211, 0x322111, 0x322210,
+            0x232121, 0x111323, 0x131123, 0x131321,
+            0x112313, 0x132113, 0x132311, 0x211313,
+            0x231113, 0x231311, 0x112133, 0x112331,
+            0x132131, 0x113123, 0x113321, 0x133121,
 
-            0x212122, 0x212320, 0x232120, 0x111322, 0x131122,
-            0x131320, 0x112312, 0x132112, 0x132310, 0x211312,
+            0x313121, 0x211331, 0x231131, 0x213113,
+            0x213311, 0x213131, 0x311123, 0x311321,
+            0x331121, 0x312113, 0x312311, 0x332111,
+            0x314111, 0x221411, 0x431111, 0x111224,
 
-            0x231112, 0x231310, 0x112132, 0x112330, 0x132130,
-            0x113122, 0x113320, 0x133120, 0x313120, 0x211330,
+            0x111422, 0x121124, 0x121421, 0x141122,
+            0x141221, 0x112214, 0x112412, 0x122114,
+            0x122411, 0x142112, 0x142211, 0x241211,
+            0x221114, 0x413111, 0x241112, 0x134111,
 
-            0x231130, 0x213112, 0x213310, 0x213130, 0x311122,
-            0x311320, 0x331120, 0x312112, 0x312310, 0x332110,
+            0x111242, 0x121142, 0x121241, 0x114212,
+            0x124112, 0x124211, 0x411212, 0x421112,
+            0x421211, 0x212141, 0x214121, 0x412121,
+            0x111143, 0x111341, 0x131141, 0x114113,
 
-            0x314110, 0x221410, 0x431110, 0x111223, 0x111421,
-            0x121123, 0x121420, 0x141121, 0x141220, 0x112213,
-
-            0x112411, 0x122113, 0x122410, 0x142111, 0x142210,
-            0x241210, 0x221113, 0x413110, 0x241111, 0x134110,
-
-            0x111241, 0x121141, 0x121240, 0x114211, 0x124111,
-            0x124210, 0x411211, 0x421111, 0x421210, 0x212140,
-
-            0x214120, 0x412120, 0x111142, 0x111340, 0x131140,
-            0x114112, 0x114310, 0x411112, 0x411310, 0x113140,
-
-            0x114130, 0x311140, 0x411130, 0x211411, 0x211213,
-            0x211231, 0x2331112
+            0x114311, 0x411113, 0x411311, 0x113141,
+            0x114131, 0x311141, 0x411131, 0x211412,
+            0x211214, 0x211232, 0x2331112
         };
-        readonly List<string> CODE128_A = new List<string> {
-            " ", "!", "\"", "#", "$",
-            "%", "&", "'", "(", ")",
+        static readonly List<string> CODE128_A = new List<string> {
+            " ", "!", "\"","#",
+            "$", "%", "&", "'",
+            "(", ")", "*", "+",
+            ",", "-", ".", "/",
 
-            "*", "+", ",", "-", ".",
-            "/", "0", "1", "2", "3",
+            "0", "1", "2", "3",
+            "4", "5", "6", "7",
+            "8", "9", ":", ";",
+            "<", "=", ">", "?",
 
-            "4", "5", "6", "7", "8",
-            "9", ":", ";", "<", "=",
+            "@", "A", "B", "C",
+            "D", "E", "F", "G",
+            "H", "I", "J", "K",
+            "L", "M", "N", "O",
 
-            ">", "?", "@", "A", "B",
-            "C", "D", "E", "F", "G",
+            "P", "Q", "R", "S",
+            "T", "U", "V", "W",
+            "X", "Y", "Z", "[",
+            "\\","]", "^", "_",
 
-            "H", "I", "J", "K", "L",
-            "M", "N", "O", "P", "Q",
+            "\0", "SOH","STX","ETX",
+            "EOT","ENQ","ACK","\a",
+            "\b", "\t", "\n", "VT",
+            "FF", "\r", "SO", "SI",
 
-            "R", "S", "T", "U", "V",
-            "W", "X", "Y", "Z", "[",
+            "DLE","DC1","DC2","DC3",
+            "DC4","NAK","SYN","ETB",
+            "CAN","EM", "SUB","ESC",
+            "FS", "GS", "RS", "US",
 
-            "\\","]", "^", "_", "\0",
-            "SOH", "STX", "ETX", "EOT", "ENQ",
-
-            "ACK", "\a", "\b", "\t", "\n",
-            "VT", "FF", "\r", "SO", "SI",
-
-            "DLE", "DC1", "DC2", "DC3", "DC4",
-            "NAK", "SYN", "ETB", "CAN", "EM",
-
-            "SUB", "ESC", "FS", "GS", "RS",
-            "US", "FNC3", "FNC2", "SHIFT", "CODE_C",
-
-            "CODE_B", "FNC4", "FNC1", "START_A", "START_B",
-            "START_C", "STOP"
+            "FNC3", "FNC2", "SHIFT","CODE_C",
+            "CODE_B","FNC4","FNC1", "START_A",
+            "START_B", "START_C", "STOP"
         };
-        readonly List<string> CODE128_B = new List<string> {
-            " ", "!", "\"", "#", "$",
-            "%", "&", "'", "(", ")",
+        static readonly List<string> CODE128_B = new List<string> {
+            " ", "!", "\"","#",
+            "$", "%", "&", "'",
+            "(", ")", "*", "+",
+            ",", "-", ".", "/",
 
-            "*", "+", ",", "-", ".",
-            "/", "0", "1", "2", "3",
+            "0", "1", "2", "3",
+            "4", "5", "6", "7",
+            "8", "9", ":", ";",
+            "<", "=", ">", "?",
 
-            "4", "5", "6", "7", "8",
-            "9", ":", ";", "<", "=",
+            "@", "A", "B", "C",
+            "D", "E", "F", "G",
+            "H", "I", "J", "K",
+            "L", "M", "N", "O",
 
-            ">", "?", "@", "A", "B",
-            "C", "D", "E", "F", "G",
+            "P", "Q", "R", "S",
+            "T", "U", "V", "W",
+            "X", "Y", "Z", "[",
+            "\\","]", "^", "_",
 
-            "H", "I", "J", "K", "L",
-            "M", "N", "O", "P", "Q",
+            "`", "a", "b", "c",
+            "d", "e", "f", "g",
+            "h", "i", "j", "k",
+            "l", "m", "n", "o",
 
-            "R", "S", "T", "U", "V",
-            "W", "X", "Y", "Z", "[",
+            "p", "q", "r", "s",
+            "t", "u", "v", "w",
+            "x", "y", "z", "{",
+            "|", "}", "~", "DEL",
 
-            "\\","]", "^", "_", "`",
-            "a", "b", "c", "d", "e",
-
-            "f", "g", "h", "i", "j",
-            "k", "l", "m", "n", "o",
-
-            "p", "q", "r", "s", "t",
-            "u", "v", "w", "x", "y",
-
-            "z", "{", "|", "}", "~",
-            "DEL", "FNC3", "FNC2", "SHIFT", "CODE_C",
-
-            "FNC4", "CODE_A", "FNC1", "START_A", "START_B",
-            "START_C", "STOP"
+            "FNC3", "FNC2", "SHIFT", "CODE_C",
+            "FNC4", "CODE_A", "FNC1", "START_A",
+            "START_B", "START_C", "STOP"
         };
-        readonly List<string> CODE128_C = new List<string> {
-            "00", "01", "02", "03", "04",
-            "05", "06", "07", "08", "09",
+        static readonly List<string> CODE128_C = new List<string> {
+            "00", "01", "02", "03",
+            "04", "05", "06", "07",
+            "08", "09", "10", "11",
+            "12", "13", "14", "15",
 
-            "10", "11", "12", "13", "14",
-            "15", "16", "17", "18", "19",
+            "16", "17", "18", "19",
+            "20", "21", "22", "23",
+            "24", "25", "26", "27",
+            "28", "29", "30", "31",
 
-            "20", "21", "22", "23", "24",
-            "25", "26", "27", "28", "29",
+            "32", "33", "34", "35",
+            "36", "37", "38", "39",
+            "40", "41", "42", "43",
+            "44", "45", "46", "47",
 
-            "30", "31", "32", "33", "34",
-            "35", "36", "37", "38", "39",
+            "48", "49", "50", "51",
+            "52", "53", "54", "55",
+            "56", "57", "58", "59",
+            "60", "61", "62", "63",
 
-            "40", "41", "42", "43", "44",
-            "45", "46", "47", "48", "49",
+            "64", "65", "66", "67",
+            "68", "69", "70", "71",
+            "72", "73", "74", "75",
+            "76", "77", "78", "79",
 
-            "50", "51", "52", "53", "54",
-            "55", "56", "57", "58", "59",
+            "80", "81", "82", "83",
+            "84", "85", "86", "87",
+            "88", "89", "90", "91",
+            "92", "93", "94", "95",
 
-            "60", "61", "62", "63", "64",
-            "65", "66", "67", "68", "69",
-
-            "70", "71", "72", "73", "74",
-            "75", "76", "77", "78", "79",
-
-            "80", "81", "82", "83", "84",
-            "85", "86", "87", "88", "89",
-
-            "90", "91", "92", "93", "94",
-            "95", "96", "97", "98", "99",
-
-            "CODE_B", "CODE_A", "FNC1", "START_A", "START_B",
-            "START_C", "STOP"
+            "96", "97", "98", "99",
+            "CODE_B", "CODE_A", "FNC1", "START_A",
+            "START_B", "START_C", "STOP"
         };
 
         void Draw() {
@@ -313,11 +318,11 @@ namespace Code {
             }
         }
 
-        void DrawBar(Graphics g, double px, double py, double width, double height) {
+        void DrawBar(Graphics g, double px, double py, double width, double ofsY = 0.0) {
             var x = (int)px;
             var y = (int)py;
             var w = (float)width;
-            var h = (float)height;
+            var h = (float)(CODE_HEIGHT + ofsY);
             var dx = px - x;
             var dw = width - (int)width;
             var gray = new Pen(Color.FromArgb(95, 0, 0, 0));
@@ -345,6 +350,13 @@ namespace Code {
                     g.FillRectangle(Brushes.Black, x, y, w, h);
                 }
             }
+        }
+
+        void DrawBorder(Graphics g, double width, double height) {
+            g.DrawRectangle(new Pen(Brushes.Black, BORDER_WEIGHT),
+                BORDER_WEIGHT / 2, (float)height,
+                (float)width - BORDER_WEIGHT / 2, CODE_HEIGHT
+            );
         }
 
         Bitmap DrawCode39(string value) {
@@ -409,7 +421,7 @@ namespace Code {
                             codeWidth = codeNarrow;
                         }
                         if (0 == j % 2) {
-                            DrawBar(g, posX, posY, codeWidth, CODE_HEIGHT);
+                            DrawBar(g, posX, posY, codeWidth);
                         }
                         posX += codeWidth;
                     }
@@ -422,10 +434,7 @@ namespace Code {
 
                 /* draw border */
                 if (chkBorder.Checked) {
-                    g.DrawRectangle(new Pen(Brushes.Black, borderWeight),
-                        borderWeight / 2, posY,
-                        posX - borderWeight / 2, CODE_HEIGHT
-                    );
+                    DrawBorder(g, posX, posY);
                 }
 
                 posY += CODE_HEIGHT + SPACE_HEIGHT;
@@ -478,7 +487,7 @@ namespace Code {
                 for (int j = 5; 0 <= j; j--) {
                     var codeWidth = codePitch * ((start >> (j * 4)) & 0xF);
                     if (1 == j % 2) {
-                        DrawBar(g, posX, posY, codeWidth, CODE_HEIGHT);
+                        DrawBar(g, posX, posY, codeWidth);
                     }
                     posX += codeWidth;
                 }
@@ -502,11 +511,10 @@ namespace Code {
                         }
                         var codeWidth = codePitch * ((code >> (j * 4)) & 0xF);
                         if (1 == j % 2) {
-                            DrawBar(g, posX, posY, codeWidth, CODE_HEIGHT);
+                            DrawBar(g, posX, posY, codeWidth);
                         }
                         posX += codeWidth;
                     }
-                    posX += codePitch;
                     line = line.Substring(readLen, line.Length - readLen);
                 }
 
@@ -516,16 +524,15 @@ namespace Code {
                 for (int j = 5; 0 <= j; j--) {
                     var codeWidth = codePitch * ((check >> (j * 4)) & 0xF);
                     if (1 == j % 2) {
-                        DrawBar(g, posX, posY, codeWidth, CODE_HEIGHT);
+                        DrawBar(g, posX, posY, codeWidth);
                     }
                     posX += codeWidth;
                 }
-                posX += codePitch;
                 val = CODE128[CODE128_B.IndexOf("STOP")];
                 for (int j = 6; 0 <= j; j--) {
                     var codeWidth = codePitch * ((val >> (j * 4)) & 0xF);
                     if (0 == j % 2) {
-                        DrawBar(g, posX, posY, codeWidth, CODE_HEIGHT);
+                        DrawBar(g, posX, posY, codeWidth);
                     }
                     posX += codeWidth;
                 }
@@ -533,10 +540,7 @@ namespace Code {
 
                 /* draw border */
                 if (chkBorder.Checked) {
-                    g.DrawRectangle(new Pen(Brushes.Black, borderWeight),
-                        borderWeight / 2, posY,
-                        posX - borderWeight / 2, CODE_HEIGHT
-                    );
+                    DrawBorder(g, posX, posY);
                 }
 
                 posY += CODE_HEIGHT + SPACE_HEIGHT;
@@ -615,7 +619,7 @@ namespace Code {
                             codeWidth = codeNarrow;
                         }
                         if (0 == j % 2) {
-                            DrawBar(g, posX, posY, codeWidth, CODE_HEIGHT);
+                            DrawBar(g, posX, posY, codeWidth);
                         }
                         posX += codeWidth;
                     }
@@ -628,10 +632,7 @@ namespace Code {
 
                 /* draw border */
                 if (chkBorder.Checked) {
-                    g.DrawRectangle(new Pen(Brushes.Black, borderWeight),
-                        borderWeight / 2, posY,
-                        posX - borderWeight / 2, CODE_HEIGHT
-                    );
+                    DrawBorder(g, posX, posY);
                 }
 
                 posY += CODE_HEIGHT + SPACE_HEIGHT;
@@ -688,9 +689,9 @@ namespace Code {
 
                 /* begin of code */
                 posX += spaceWidth;
-                DrawBar(g, posX, posY, codeNarrow, CODE_HEIGHT);
+                DrawBar(g, posX, posY, codeNarrow);
                 posX += codeNarrow * 2;
-                DrawBar(g, posX, posY, codeNarrow, CODE_HEIGHT);
+                DrawBar(g, posX, posY, codeNarrow);
                 posX += codeNarrow * 2;
 
                 /* draw data */
@@ -742,10 +743,10 @@ namespace Code {
                             );
                         }
                         if (1 == ((code1 >> j) & 1)) {
-                            DrawBar(g, posX, posY, codeWide, CODE_HEIGHT);
+                            DrawBar(g, posX, posY, codeWide);
                             posX += codeWide;
                         } else {
-                            DrawBar(g, posX, posY, codeNarrow, CODE_HEIGHT);
+                            DrawBar(g, posX, posY, codeNarrow);
                             posX += codeNarrow;
                         }
                         if (1 == ((code2 >> j) & 1)) {
@@ -758,18 +759,15 @@ namespace Code {
                 }
 
                 /* end of code */
-                DrawBar(g, posX, posY, codeWide, CODE_HEIGHT);
+                DrawBar(g, posX, posY, codeWide);
                 posX += codeWide + codeNarrow;
-                DrawBar(g, posX, posY, codeNarrow, CODE_HEIGHT);
+                DrawBar(g, posX, posY, codeNarrow);
                 posX += codeNarrow;
                 posX += spaceWidth;
 
                 /* draw border */
                 if (chkBorder.Checked) {
-                    g.DrawRectangle(new Pen(Brushes.Black, borderWeight),
-                        borderWeight / 2, posY,
-                        posX - borderWeight / 2, CODE_HEIGHT
-                    );
+                    DrawBorder(g, posX, posY);
                 }
 
                 posY += CODE_HEIGHT + SPACE_HEIGHT;
@@ -811,9 +809,9 @@ namespace Code {
 
                 /* begin of code */
                 posX += spaceWidth;
-                DrawBar(g, posX, posY, codePitch, CODE_HEIGHT);
+                DrawBar(g, posX, posY, codePitch);
                 posX += codePitch * 2;
-                DrawBar(g, posX, posY, codePitch, CODE_HEIGHT);
+                DrawBar(g, posX, posY, codePitch);
                 posX += codePitch;
 
                 /* draw data */
@@ -837,9 +835,9 @@ namespace Code {
                     }
                     if (7 == i) {
                         posX += codePitch;
-                        DrawBar(g, posX, posY, codePitch, CODE_HEIGHT);
+                        DrawBar(g, posX, posY, codePitch);
                         posX += codePitch * 2;
-                        DrawBar(g, posX, posY, codePitch, CODE_HEIGHT);
+                        DrawBar(g, posX, posY, codePitch);
                         posX += codePitch;
                     }
                     int code;
@@ -864,7 +862,7 @@ namespace Code {
                             len++;
                         } else {
                             if (0 < len) {
-                                DrawBar(g, posX, posY, codePitch * len, CODE_HEIGHT - 5);
+                                DrawBar(g, posX, posY, codePitch * len, -5);
                                 posX += codePitch * len;
                                 len = 0;
                             }
@@ -872,16 +870,16 @@ namespace Code {
                         }
                     }
                     if (0 < len) {
-                        DrawBar(g, posX, posY, codePitch * len, CODE_HEIGHT - 5);
+                        DrawBar(g, posX, posY, codePitch * len, -5);
                         posX += codePitch * len;
                     }
                     line = line.Substring(1, line.Length - 1);
                 }
 
                 /* end of code */
-                DrawBar(g, posX, posY, codePitch, CODE_HEIGHT);
+                DrawBar(g, posX, posY, codePitch);
                 posX += codePitch * 2;
-                DrawBar(g, posX, posY, codePitch, CODE_HEIGHT);
+                DrawBar(g, posX, posY, codePitch);
 
                 posY += CODE_HEIGHT + SPACE_HEIGHT;
             }
