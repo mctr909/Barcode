@@ -2,7 +2,55 @@
 using System.Drawing;
 
 class QR {
-    const string SIZE_TABLE = "D01A01K01G01J01D01V01P01T01I01P02L02L02N01J04T02R02T01P04L04J04L02V04R04L04N02T05L06P04R02T06P06P05X02R08N08T05L04V08R08X05N04R11V08P08R04V11T10P09T04P16R12R09X04R16N16R10P06R18X12V10R06X16R17V11V06V19V16T13X06V21V18T14V07T25T21T16V08V25X20T17V08X25V23V17V09R34X23V18X09X30X25V20X10X32X27V21T12X35X29V23V12X37V34V25X12X40X34V26X13X42X35V28X14X45X38V29X15X48X40V31X16X51X43V33X17X54X45V35X18X57X48V37X19X60X51V38X19X63X53V40X20X66X56V43X21X70X59V45X22X74X62V47X24X77X65V49X25X81X68";
+    readonly string[] SIZE_TABLE = {
+        "D01", "A01", "K01", "G01",
+        "J01", "D01", "V01", "P01",
+        "T01", "I01", "P02", "L02",
+        "L02", "N01", "J04", "T02",
+        "R02", "T01", "P04", "L04",
+
+        "J04", "L02", "V04", "R04",
+        "L04", "N02", "T05", "L06",
+        "P04", "R02", "T06", "P06",
+        "P05", "X02", "R08", "N08",
+        "T05", "L04", "V08", "R08",
+
+        "X05", "N04", "R11", "V08",
+        "P08", "R04", "V11", "T10",
+        "P09", "T04", "P16", "R12",
+        "R09", "X04", "R16", "N16",
+        "R10", "P06", "R18", "X12",
+
+        "V10", "R06", "X16", "R17",
+        "V11", "V06", "V19", "V16",
+        "T13", "X06", "V21", "V18",
+        "T14", "V07", "T25", "T21",
+        "T16", "V08", "V25", "X20",
+
+        "T17", "V08", "X25", "V23",
+        "V17", "V09", "R34", "X23",
+        "V18", "X09", "X30", "X25",
+        "V20", "X10", "X32", "X27",
+        "V21", "T12", "X35", "X29",
+
+        "V23", "V12", "X37", "V34",
+        "V25", "X12", "X40", "X34",
+        "V26", "X13", "X42", "X35",
+        "V28", "X14", "X45", "X38",
+        "V29", "X15", "X48", "X40",
+
+        "V31", "X16", "X51", "X43",
+        "V33", "X17", "X54", "X45",
+        "V35", "X18", "X57", "X48",
+        "V37", "X19", "X60", "X51",
+        "V38", "X19", "X63", "X53",
+
+        "V40", "X20", "X66", "X56",
+        "V43", "X21", "X70", "X59",
+        "V45", "X22", "X74", "X62",
+        "V47", "X24", "X77", "X65",
+        "V49", "X25", "X81", "X68"
+    };
     const string QRALNUM = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
 
     readonly byte[] EXP_LOG = new byte[513];
@@ -536,9 +584,9 @@ class QR {
                 vs = (cap + 18 * ecx_count[1] + 17 * ecx_count[2] + 20 * ecx_count[3] + 7) / 8;
             }
             size = 4 * ver + 17;
-            var i = (ver - 1) * 12 + mode * 3;
-            var s = SIZE_TABLE.Substring(i, 3);
-            ccsiz = s.Substring(0, 1).ToCharArray()[0] - 65 + 7;
+            var i = (ver - 1) * 4 + mode;
+            var s = SIZE_TABLE[i];
+            ccsiz = s.Substring(0, 1).ToCharArray()[0] - ':';
             ccblks = int.Parse(s.Substring(s.Length - 2, 2));
             if (ver == 1) {
                 syncs = 0;
