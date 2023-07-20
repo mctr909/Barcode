@@ -56,32 +56,24 @@ namespace Code {
             Bitmap bmp = null;
             switch (cmbType.SelectedIndex) {
             case 0:
-                numPitch.Increment = 1.0m;
-                numPitch.Value = (int)numPitch.Value;
                 bmp = DrawCode(textBox1.Text, Barcode.Type.CODE128);
                 break;
             case 1:
-                numPitch.Increment = 0.5m;
                 bmp = DrawCode(textBox1.Text, Barcode.Type.CODE39);
                 break;
             case 2:
-                numPitch.Increment = 0.5m;
                 bmp = DrawCode(textBox1.Text, Barcode.Type.NW7_CODABAR);
                 break;
             case 3:
-                numPitch.Increment = 0.5m;
                 bmp = DrawCode(textBox1.Text, Barcode.Type.ITF);
                 break;
             case 4:
-                numPitch.Increment = 0.5m;
                 bmp = DrawCode(textBox1.Text, Barcode.Type.GTIN14);
                 break;
             case 5:
-                numPitch.Increment = 0.5m;
                 bmp = DrawCode(textBox1.Text, Barcode.Type.EAN_JAN);
                 break;
             case 6:
-                numPitch.Increment = 0.5m;
                 bmp = QR.Draw(textBox1.Text, (float)numPitch.Value);
                 break;
             }
