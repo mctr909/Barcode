@@ -425,10 +425,12 @@ class Barcode {
         int val;
         int symbol;
 
+        var table = CODE128_B;
+
         /* begin of code */
         PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
-        val = CODE128_B.IndexOf("START_B");
+        val = table.IndexOf("START_B");
         sum = val;
         symbol = CODE128[val];
         for (int j = 5; 0 <= j; j--) {
@@ -440,12 +442,28 @@ class Barcode {
         }
 
         /* draw data */
-        var table = CODE128_B;
         var readLen = 1;
         for (int i = 0; 1 <= value.Length; i++) {
+            if (CODE128_B == table) {
+                readLen = 1;
+            }
+            if (CODE128_C == table) {
+                if (value.Length < 2) {
+                    readLen = 1;
+                } else {
+                    readLen = 2;
+                }
+            }
             var chr = value.Substring(0, readLen);
-            if (!table.Contains(chr)) {
-                chr = " ";
+            if (CODE128_B == table) {
+                if (!table.Contains(chr)) {
+                    chr = " ";
+                }
+            }
+            if (CODE128_C == table) {
+                if (!table.Contains(chr)) {
+                    chr = "00";
+                }
             }
             mG.DrawString(chr, mFont, Brushes.Black,
                 PosX, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
@@ -473,7 +491,7 @@ class Barcode {
             }
             PosX += barWidth;
         }
-        symbol = CODE128[CODE128_B.IndexOf("STOP")];
+        symbol = CODE128[table.IndexOf("STOP")];
         for (int j = 6; 0 <= j; j--) {
             var barWidth = Pitch * ((symbol >> (j * 4)) & 0xF);
             if (0 == j % 2) {
