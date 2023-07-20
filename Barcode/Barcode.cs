@@ -5,108 +5,7 @@ class Barcode {
     const int BORDER_WEIGHT = 6;
     const int QUIET_SIZE = 15;
 
-    int[] ITF = {
-        0b00110,
-        0b10001,
-        0b01001,
-        0b11000,
-        0b00101,
-        0b10100,
-        0b01100,
-        0b00011,
-        0b10010,
-        0b01010
-    };
-
-    int[,] EAN = {
-        { 0b001101, 0b100111, 0b111001, 0b000000 },
-        { 0b011001, 0b110011, 0b110011, 0b001011 },
-        { 0b010011, 0b011011, 0b110110, 0b001101 },
-        { 0b111101, 0b100001, 0b100001, 0b001110 },
-        { 0b100011, 0b011101, 0b101110, 0b010011 },
-        { 0b110001, 0b111001, 0b100111, 0b011001 },
-        { 0b101111, 0b000101, 0b101000, 0b011100 },
-        { 0b111011, 0b010001, 0b100010, 0b010101 },
-        { 0b110111, 0b001001, 0b100100, 0b010110 },
-        { 0b001011, 0b010111, 0b111010, 0b011010 }
-    };
-
-    readonly Dictionary<string, int> NW7 = new Dictionary<string, int> {
-        { "0", 0b0000011 },
-        { "1", 0b0000110 },
-        { "2", 0b0001001 },
-        { "3", 0b1100000 },
-        { "4", 0b0010010 },
-        { "5", 0b1000010 },
-        { "6", 0b0100001 },
-        { "7", 0b0100100 },
-        { "8", 0b0110000 },
-        { "9", 0b1001000 },
-
-        { "-", 0b0001100 },
-        { "$", 0b0011000 },
-        { ":", 0b1000101 },
-        { "/", 0b1010001 },
-        { ".", 0b1010100 },
-        { "+", 0b0010101 },
-
-        { "A", 0b0011010 },
-        { "B", 0b0101001 },
-        { "C", 0b0001011 },
-        { "D", 0b0001110 }
-    };
-    char[] NW7_TERM = { 'A', 'B', 'C', 'D' };
-
-    readonly Dictionary<string, int> CODE39 = new Dictionary<string, int> {
-        { "0", 0b000110100 },
-        { "1", 0b100100001 },
-        { "2", 0b001100001 },
-        { "3", 0b101100000 },
-        { "4", 0b000110001 },
-        { "5", 0b100110000 },
-        { "6", 0b001110000 },
-        { "7", 0b000100101 },
-        { "8", 0b100100100 },
-        { "9", 0b001100100 },
-
-        { "A", 0b100001001 },
-        { "B", 0b001001001 },
-        { "C", 0b101001000 },
-        { "D", 0b000011001 },
-        { "E", 0b100011000 },
-        { "F", 0b001011000 },
-        { "G", 0b000001101 },
-        { "H", 0b100001100 },
-        { "I", 0b001001100 },
-        { "J", 0b000011100 },
-        { "K", 0b100000011 },
-        { "L", 0b001000011 },
-        { "M", 0b101000010 },
-        { "N", 0b000010011 },
-        { "O", 0b100010010 },
-        { "P", 0b001010010 },
-        { "Q", 0b000000111 },
-        { "R", 0b100000110 },
-        { "S", 0b001000110 },
-        { "T", 0b000010110 },
-        { "U", 0b110000001 },
-        { "V", 0b011000001 },
-        { "W", 0b111000000 },
-        { "X", 0b010010001 },
-        { "Y", 0b110010000 },
-        { "Z", 0b011010000 },
-
-        { "$", 0b010101000 },
-        { "/", 0b010100010 },
-        { "+", 0b010001010 },
-        { "-", 0b010000101 },
-        { "*", 0b010010100 },
-        { " ", 0b011000100 },
-        { "%", 0b000101010 },
-        { ".", 0b110000100 }
-    };
-
-    int[] CODE128 = {
+    readonly int[] CODE128 = {
         0x212222, 0x222122, 0x222221, 0x121223,
         0x121322, 0x131222, 0x122213, 0x122312,
         0x132212, 0x221213, 0x221312, 0x231212,
@@ -247,6 +146,107 @@ class Barcode {
         "START_B", "START_C", "STOP"
     };
 
+    readonly Dictionary<string, int> CODE39 = new Dictionary<string, int> {
+        { "0", 0b0001101000 },
+        { "1", 0b1001000010 },
+        { "2", 0b0011000010 },
+        { "3", 0b1011000000 },
+        { "4", 0b0001100010 },
+        { "5", 0b1001100000 },
+        { "6", 0b0011100000 },
+        { "7", 0b0001001010 },
+        { "8", 0b1001001000 },
+        { "9", 0b0011001000 },
+
+        { "A", 0b1000010010 },
+        { "B", 0b0010010010 },
+        { "C", 0b1010010000 },
+        { "D", 0b0000110010 },
+        { "E", 0b1000110000 },
+        { "F", 0b0010110000 },
+        { "G", 0b0000011010 },
+        { "H", 0b1000011000 },
+        { "I", 0b0010011000 },
+        { "J", 0b0000111000 },
+        { "K", 0b1000000110 },
+        { "L", 0b0010000110 },
+        { "M", 0b1010000100 },
+        { "N", 0b0000100110 },
+        { "O", 0b1000100100 },
+        { "P", 0b0010100100 },
+        { "Q", 0b0000001110 },
+        { "R", 0b1000001100 },
+        { "S", 0b0010001100 },
+        { "T", 0b0000101100 },
+        { "U", 0b1100000010 },
+        { "V", 0b0110000010 },
+        { "W", 0b1110000000 },
+        { "X", 0b0100100010 },
+        { "Y", 0b1100100000 },
+        { "Z", 0b0110100000 },
+
+        { "$", 0b0101010000 },
+        { "/", 0b0101000100 },
+        { "+", 0b0100010100 },
+        { "-", 0b0100001010 },
+        { "*", 0b0100101000 },
+        { " ", 0b0110001000 },
+        { "%", 0b0001010100 },
+        { ".", 0b1100001000 }
+    };
+
+    readonly Dictionary<string, int> NW7 = new Dictionary<string, int> {
+        { "0", 0b00000110 },
+        { "1", 0b00001100 },
+        { "2", 0b00010010 },
+        { "3", 0b11000000 },
+        { "4", 0b00100100 },
+        { "5", 0b10000100 },
+        { "6", 0b01000010 },
+        { "7", 0b01001000 },
+        { "8", 0b01100000 },
+        { "9", 0b10010000 },
+        { "-", 0b00011000 },
+        { "$", 0b00110000 },
+
+        { "A", 0b00110100 },
+        { "B", 0b01010010 },
+        { "C", 0b00010110 },
+        { "D", 0b00011100 },
+        { "+", 0b00101010 },
+        { ":", 0b10001010 },
+        { "/", 0b10100010 },
+        { ".", 0b10101000 }
+    };
+    readonly char[] NW7_TERM = { 'A', 'B', 'C', 'D' };
+    readonly char[] NW7_LONG = { 'A', 'B', 'C', 'D', '+', ':', '/', '.' };
+
+    readonly int[] ITF = {
+        0b00110,
+        0b10001,
+        0b01001,
+        0b11000,
+        0b00101,
+        0b10100,
+        0b01100,
+        0b00011,
+        0b10010,
+        0b01010
+    };
+
+    readonly int[,] EAN = {
+        { 0b001101, 0b100111, 0b111001, 0b000000 },
+        { 0b011001, 0b110011, 0b110011, 0b001011 },
+        { 0b010011, 0b011011, 0b110110, 0b001101 },
+        { 0b111101, 0b100001, 0b100001, 0b001110 },
+        { 0b100011, 0b011101, 0b101110, 0b010011 },
+        { 0b110001, 0b111001, 0b100111, 0b011001 },
+        { 0b101111, 0b000101, 0b101000, 0b011100 },
+        { 0b111011, 0b010001, 0b100010, 0b010101 },
+        { 0b110111, 0b001001, 0b100100, 0b010110 },
+        { 0b001011, 0b010111, 0b111010, 0b011010 }
+    };
+
     public enum Type {
         CODE128,
         CODE39,
@@ -274,8 +274,20 @@ class Barcode {
             return (temp.Length * (Pitch * 11) + Pitch * (11 + 11 + 13) + spaceWidth + (Border ? BORDER_WEIGHT : 0));
         case Type.CODE39:
             return (temp.Length * (Pitch * 7 + Pitch * 3 * 3) + spaceWidth + (Border ? BORDER_WEIGHT : 0));
-        case Type.NW7_CODABAR:
-            return (temp.Length * (Pitch * 5 + Pitch * 3 * 3) + spaceWidth + (Border ? BORDER_WEIGHT : 0));
+        case Type.NW7_CODABAR: {
+            var longCount = 0.0;
+            var shortCount = 0.0;
+            for (int i = 0; i < temp.Length; i++) {
+                if (0 <= (temp[i] + "").IndexOfAny(NW7_LONG)) {
+                    longCount++;
+                } else {
+                    shortCount++;
+                }
+            }
+            longCount *= Pitch * 5 + Pitch * 3 * 3;
+            shortCount *= Pitch * 6 + Pitch * 3 * 2;
+            return (longCount + shortCount + spaceWidth + (Border ? BORDER_WEIGHT : 0));
+        }
         case Type.ITF:
             return (temp.Length * (Pitch * 3 + Pitch * 3 * 2) + Pitch * 9 + spaceWidth + (Border ? BORDER_WEIGHT : 0));
         case Type.GTIN14:
@@ -407,23 +419,24 @@ class Barcode {
     }
 
     void DrawCode128(string value) {
-        var codePitch = Pitch;
         var spaceWidth = Pitch * QUIET_SIZE;
 
-        PosX += Border ? (BORDER_WEIGHT / 2) : 0;
+        int sum;
+        int val;
+        int symbol;
 
         /* begin of code */
-        var sum = 0;
+        PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
-        var val = CODE128_B.IndexOf("START_B");
-        sum += val;
-        var start = CODE128[val];
+        val = CODE128_B.IndexOf("START_B");
+        sum = val;
+        symbol = CODE128[val];
         for (int j = 5; 0 <= j; j--) {
-            var codeWidth = codePitch * ((start >> (j * 4)) & 0xF);
+            var barWidth = Pitch * ((symbol >> (j * 4)) & 0xF);
             if (1 == j % 2) {
-                DrawBar(codeWidth);
+                DrawBar(barWidth);
             }
-            PosX += codeWidth;
+            PosX += barWidth;
         }
 
         /* draw data */
@@ -434,41 +447,39 @@ class Barcode {
             if (!table.Contains(chr)) {
                 chr = " ";
             }
+            mG.DrawString(chr, mFont, Brushes.Black,
+                PosX, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
+            );
             val = table.IndexOf(chr);
             sum += val * (i + 1);
-            var code = CODE128[val];
+            symbol = CODE128[val];
             for (int j = 5; 0 <= j; j--) {
-                if (5 == j) {
-                    mG.DrawString(chr, mFont, Brushes.Black,
-                        PosX, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
-                    );
-                }
-                var codeWidth = codePitch * ((code >> (j * 4)) & 0xF);
+                var barWidth = Pitch * ((symbol >> (j * 4)) & 0xF);
                 if (1 == j % 2) {
-                    DrawBar(codeWidth);
+                    DrawBar(barWidth);
                 }
-                PosX += codeWidth;
+                PosX += barWidth;
             }
             value = value.Substring(readLen, value.Length - readLen);
         }
 
         /* end of code */
         sum = sum % 103;
-        var check = CODE128[sum];
+        symbol = CODE128[sum];
         for (int j = 5; 0 <= j; j--) {
-            var codeWidth = codePitch * ((check >> (j * 4)) & 0xF);
+            var barWidth = Pitch * ((symbol >> (j * 4)) & 0xF);
             if (1 == j % 2) {
-                DrawBar(codeWidth);
+                DrawBar(barWidth);
             }
-            PosX += codeWidth;
+            PosX += barWidth;
         }
-        val = CODE128[CODE128_B.IndexOf("STOP")];
+        symbol = CODE128[CODE128_B.IndexOf("STOP")];
         for (int j = 6; 0 <= j; j--) {
-            var codeWidth = codePitch * ((val >> (j * 4)) & 0xF);
+            var barWidth = Pitch * ((symbol >> (j * 4)) & 0xF);
             if (0 == j % 2) {
-                DrawBar(codeWidth);
+                DrawBar(barWidth);
             }
-            PosX += codeWidth;
+            PosX += barWidth;
         }
         PosX += spaceWidth;
 
@@ -479,13 +490,12 @@ class Barcode {
     }
 
     void DrawCode39(string value) {
-        var codeNarrow = Pitch;
-        var codeWide = Pitch * 3;
+        var narrow = Pitch;
+        var wide = Pitch * 3;
         var spaceWidth = Pitch * QUIET_SIZE;
 
-        PosX += Border ? (BORDER_WEIGHT / 2) : 0;
-
         /* begin of code */
+        PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
 
         /* draw data */
@@ -494,25 +504,22 @@ class Barcode {
             if (!CODE39.ContainsKey(chr)) {
                 chr = " ";
             }
-            var code = CODE39[chr];
-            for (int j = 8; 0 <= j; j--) {
-                if (8 == j) {
-                    mG.DrawString(chr, mFont, Brushes.Black,
-                        PosX, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
-                    );
-                }
-                float codeWidth;
-                if (1 == ((code >> j) & 1)) {
-                    codeWidth = codeWide;
+            mG.DrawString(chr, mFont, Brushes.Black,
+                PosX, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
+            );
+            var symbol = CODE39[chr];
+            for (int j = 9; 0 <= j; j--) {
+                float barWidth;
+                if (1 == ((symbol >> j) & 1)) {
+                    barWidth = wide;
                 } else {
-                    codeWidth = codeNarrow;
+                    barWidth = narrow;
                 }
-                if (0 == j % 2) {
-                    DrawBar(codeWidth);
+                if (1 == j % 2) {
+                    DrawBar(barWidth);
                 }
-                PosX += codeWidth;
+                PosX += barWidth;
             }
-            PosX += codeNarrow;
         }
 
         /* end of code */
@@ -525,13 +532,12 @@ class Barcode {
     }
 
     void DrawNW7(string value) {
-        var codeNarrow = Pitch;
-        var codeWide = Pitch * 3;
+        var narrow = Pitch;
+        var wide = Pitch * 3;
         var spaceWidth = Pitch * QUIET_SIZE;
 
-        PosX += Border ? (BORDER_WEIGHT / 2) : 0;
-
         /* begin of code */
+        PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
 
         /* draw data */
@@ -543,25 +549,22 @@ class Barcode {
             if (1 <= i && i < value.Length - 1 && 0 <= chr.IndexOfAny(NW7_TERM)) {
                 chr = "-";
             }
-            var code = NW7[chr];
-            for (int j = 6; 0 <= j; j--) {
-                if (6 == j) {
-                    mG.DrawString(chr, mFont, Brushes.Black,
-                        PosX, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
-                    );
-                }
-                float codeWidth;
-                if (1 == ((code >> j) & 1)) {
-                    codeWidth = codeWide;
+            mG.DrawString(chr, mFont, Brushes.Black,
+                PosX, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
+            );
+            var symbol = NW7[chr];
+            for (int j = 7; 0 <= j; j--) {
+                float barWidth;
+                if (1 == ((symbol >> j) & 1)) {
+                    barWidth = wide;
                 } else {
-                    codeWidth = codeNarrow;
+                    barWidth = narrow;
                 }
-                if (0 == j % 2) {
-                    DrawBar(codeWidth);
+                if (1 == j % 2) {
+                    DrawBar(barWidth);
                 }
-                PosX += codeWidth;
+                PosX += barWidth;
             }
-            PosX += codeNarrow;
         }
 
         /* end of code */
@@ -574,18 +577,17 @@ class Barcode {
     }
 
     void DrawITF(string value, bool gtin14 = false) {
-        var codeNarrow = Pitch;
-        var codeWide = Pitch * 3;
+        var narrow = Pitch;
+        var wide = Pitch * 3;
         var spaceWidth = Pitch * QUIET_SIZE;
 
-        PosX += Border ? (BORDER_WEIGHT / 2) : 0;
-
         /* begin of code */
+        PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
-        DrawBar(codeNarrow);
-        PosX += codeNarrow * 2;
-        DrawBar(codeNarrow);
-        PosX += codeNarrow * 2;
+        DrawBar(narrow);
+        PosX += narrow * 2;
+        DrawBar(narrow);
+        PosX += narrow * 2;
 
         /* draw data */
         var sum = 0;
@@ -601,15 +603,15 @@ class Barcode {
             if (!int.TryParse(chr2, out val2)) {
                 chr2 = "0";
             }
-            var code1 = ITF[val1];
-            var code2 = ITF[val2];
+            var symbol1 = ITF[val1];
+            var symbol2 = ITF[val2];
             if (gtin14) {
                 sum += val1 * 3 + val2;
                 if (12 == i) {
                     val2 = sum % 10;
                     val2 = (10 - val2) % 10;
                     chr2 = val2.ToString();
-                    code2 = ITF[val2];
+                    symbol2 = ITF[val2];
                     str += chr1 + chr2;
                 } else {
                     str += chr1 + chr2;
@@ -620,26 +622,26 @@ class Barcode {
                 );
             }
             for (int j = 4; 0 <= j; j--) {
-                if (1 == ((code1 >> j) & 1)) {
-                    DrawBar(codeWide);
-                    PosX += codeWide;
+                if (1 == ((symbol1 >> j) & 1)) {
+                    DrawBar(wide);
+                    PosX += wide;
                 } else {
-                    DrawBar(codeNarrow);
-                    PosX += codeNarrow;
+                    DrawBar(narrow);
+                    PosX += narrow;
                 }
-                if (1 == ((code2 >> j) & 1)) {
-                    PosX += codeWide;
+                if (1 == ((symbol2 >> j) & 1)) {
+                    PosX += wide;
                 } else {
-                    PosX += codeNarrow;
+                    PosX += narrow;
                 }
             }
         }
 
         /* end of code */
-        DrawBar(codeWide);
-        PosX += codeWide + codeNarrow;
-        DrawBar(codeNarrow);
-        PosX += codeNarrow;
+        DrawBar(wide);
+        PosX += wide + narrow;
+        DrawBar(narrow);
+        PosX += narrow;
         PosX += spaceWidth;
 
         if (gtin14) {
@@ -662,18 +664,16 @@ class Barcode {
     }
 
     void DrawEAN(string value) {
-        var codePitch = Pitch;
         var spaceWidth = Pitch * QUIET_SIZE;
         var notchHeight = 5;
 
-        PosX += Border ? 1 : 0;
-
         /* begin of code */
+        PosX += Border ? 1 : 0;
         PosX += spaceWidth;
-        DrawBar(codePitch);
-        PosX += codePitch * 2;
-        DrawBar(codePitch);
-        PosX += codePitch;
+        DrawBar(Pitch);
+        PosX += Pitch * 2;
+        DrawBar(Pitch);
+        PosX += Pitch;
 
         /* draw data */
         var sum = 0;
@@ -688,56 +688,54 @@ class Barcode {
             if (0 == i) {
                 oddEven = EAN[val, 3];
                 mG.DrawString(chr, mFont, Brushes.Black,
-                    spaceWidth - codePitch * 8, PosY + CodeHeight - notchHeight
+                    spaceWidth - Pitch * 8, PosY + CodeHeight - notchHeight
                 );
                 continue;
             }
             if (7 == i) {
-                PosX += codePitch;
-                DrawBar(codePitch);
-                PosX += codePitch * 2;
-                DrawBar(codePitch);
-                PosX += codePitch;
+                PosX += Pitch;
+                DrawBar(Pitch);
+                PosX += Pitch * 2;
+                DrawBar(Pitch);
+                PosX += Pitch;
             }
-            int code;
+            int symbol;
             if (i < 7) {
-                code = EAN[val, (oddEven >> (6 - i)) & 1];
+                symbol = EAN[val, (oddEven >> (6 - i)) & 1];
             } else if (12 == i) {
                 val = sum % 10;
                 val = (10 - val) % 10;
                 chr = val.ToString();
-                code = EAN[val, 2];
+                symbol = EAN[val, 2];
             } else {
-                code = EAN[val, 2];
+                symbol = EAN[val, 2];
             }
+            mG.DrawString(chr, mFont, Brushes.Black,
+                PosX, PosY + CodeHeight - notchHeight
+            );
             int len = 0;
             for (int j = 6; 0 <= j; j--) {
-                if (6 == j) {
-                    mG.DrawString(chr, mFont, Brushes.Black,
-                        PosX, PosY + CodeHeight - notchHeight
-                    );
-                }
-                if (1 == ((code >> j) & 1)) {
+                if (1 == ((symbol >> j) & 1)) {
                     len++;
                 } else {
                     if (0 < len) {
-                        DrawBar(codePitch * len, -notchHeight);
-                        PosX += codePitch * len;
+                        DrawBar(Pitch * len, -notchHeight);
+                        PosX += Pitch * len;
                         len = 0;
                     }
-                    PosX += codePitch;
+                    PosX += Pitch;
                 }
             }
             if (0 < len) {
-                DrawBar(codePitch * len, -notchHeight);
-                PosX += codePitch * len;
+                DrawBar(Pitch * len, -notchHeight);
+                PosX += Pitch * len;
             }
         }
 
         /* end of code */
-        DrawBar(codePitch);
-        PosX += codePitch * 2;
-        DrawBar(codePitch);
+        DrawBar(Pitch);
+        PosX += Pitch * 2;
+        DrawBar(Pitch);
         PosX += spaceWidth;
 
         /* draw border */
