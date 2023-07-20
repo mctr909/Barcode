@@ -713,22 +713,22 @@ class Barcode {
             mG.DrawString(chr, mFont, Brushes.Black,
                 PosX, PosY + CodeHeight - notchHeight
             );
-            int len = 0;
+            float barWidth = 0;
             for (int j = 6; 0 <= j; j--) {
                 if (1 == ((symbol >> j) & 1)) {
-                    len++;
+                    barWidth += Pitch;
                 } else {
-                    if (0 < len) {
-                        DrawBar(Pitch * len, -notchHeight);
-                        PosX += Pitch * len;
-                        len = 0;
+                    if (0 < barWidth) {
+                        DrawBar(barWidth, -notchHeight);
+                        PosX += barWidth;
+                        barWidth = 0;
                     }
                     PosX += Pitch;
                 }
             }
-            if (0 < len) {
-                DrawBar(Pitch * len, -notchHeight);
-                PosX += Pitch * len;
+            if (0 < barWidth) {
+                DrawBar(barWidth, -notchHeight);
+                PosX += barWidth;
             }
         }
 
