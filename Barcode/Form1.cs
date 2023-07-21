@@ -103,8 +103,8 @@ namespace Code {
                 }
                 codeCount++;
             }
-            const int SPACE_HEIGHT = 24;
-            code.CreateCanvas((int)maxWidth, codeCount * (code.CodeHeight + SPACE_HEIGHT));
+            const int SPACE_HEIGHT = 20;
+            code.CreateCanvas((int)maxWidth, codeCount * (code.Height + SPACE_HEIGHT));
             code.PosY = SPACE_HEIGHT / 2.0f;
             for (int l = 0; l < lines.Length; l++) {
                 var line = lines[l];
@@ -112,7 +112,7 @@ namespace Code {
                     continue;
                 }
                 code.Draw(line, type);
-                code.PosY += code.CodeHeight;
+                code.PosY += code.Height;
                 code.PosY += SPACE_HEIGHT;
             }
             return code.Bmp;

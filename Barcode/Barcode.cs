@@ -282,7 +282,13 @@ class Barcode {
     }
 
     public Bitmap Bmp;
-    public int CodeHeight = 45;
+    public int Height {
+        get { return mHeight; }
+        set {
+            mHeight = value;
+            mBarHeight = value - 10;
+        }
+    }
     public float PosX = 0.0f;
     public float PosY = 0.0f;
     public float Pitch = 1.0f;
@@ -290,6 +296,8 @@ class Barcode {
 
     Font mFont = new Font("MS Gothic", 9.0f);
     Graphics mG;
+    int mHeight = 50;
+    int mBarHeight = 40;
 
     public double GetWidth(string value, Type type) {
         var temp = TrimAndPad(value, type);
@@ -358,19 +366,29 @@ class Barcode {
         var beginY = PosY;
         switch (type) {
         case Type.CODE128:
+            PosX += Border ? (BORDER_WEIGHT / 2) : 0;
             DrawCode128(temp);
+            DrawBorder();
             break;
         case Type.CODE39:
+            PosX += Border ? (BORDER_WEIGHT / 2) : 0;
             DrawCode39(temp);
+            DrawBorder();
             break;
         case Type.NW7_CODABAR:
+            PosX += Border ? (BORDER_WEIGHT / 2) : 0;
             DrawNW7(temp);
+            DrawBorder();
             break;
         case Type.ITF:
+            PosX += Border ? (BORDER_WEIGHT / 2) : 0;
             DrawITF(temp);
+            DrawBorder();
             break;
         case Type.GTIN14:
+            PosX += Border ? (BORDER_WEIGHT / 2) : 0;
             DrawGTIN14(temp);
+            DrawBorder();
             break;
         case Type.EAN_JAN:
             DrawEAN(temp);
@@ -421,7 +439,7 @@ class Barcode {
         var x = (int)PosX;
         var y = (int)PosY;
         var w = (float)width;
-        var h = (float)(CodeHeight + ofsY);
+        var h = (float)(mBarHeight + ofsY);
         var dx = PosX - x;
         var dw = width - (int)width;
         var gray = new Pen(Color.FromArgb(95, 0, 0, 0));
@@ -451,11 +469,13 @@ class Barcode {
         }
     }
 
-    void DrawBorder(double width, double height) {
-        mG.DrawRectangle(new Pen(Brushes.Black, BORDER_WEIGHT),
-            BORDER_WEIGHT / 2, (float)height + BORDER_WEIGHT / 2,
-            (float)width - BORDER_WEIGHT / 2, CodeHeight - BORDER_WEIGHT
-        );
+    void DrawBorder() {
+        if (Border) {
+            mG.DrawRectangle(new Pen(Brushes.Black, BORDER_WEIGHT),
+                BORDER_WEIGHT / 2, PosY + BORDER_WEIGHT / 2,
+                PosX - BORDER_WEIGHT / 2, mBarHeight - BORDER_WEIGHT
+            );
+        }
     }
 
     void DrawCode128(string value) {
@@ -479,7 +499,6 @@ class Barcode {
         }
 
         /* 開始コード描画 */
-        PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
         sum = val;
         symbol = CODE128[val];
@@ -499,7 +518,7 @@ class Barcode {
             }
             /* テキスト描画 */
             mG.DrawString(chr, mFont, Brushes.Black,
-                PosX, PosY + CodeHeight
+                PosX, PosY + mBarHeight
             );
             /* シンボル描画 */
             val = table.IndexOf(chr);
@@ -534,10 +553,6 @@ class Barcode {
             PosX += barWidth;
         }
         PosX += spaceWidth;
-
-        if (Border) {
-            DrawBorder(PosX, PosY);
-        }
     }
 
     void DrawCode39(string value) {
@@ -546,7 +561,6 @@ class Barcode {
         var spaceWidth = Pitch * QUIET_SIZE;
 
         /* 開始 */
-        PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
 
         /* データ */
@@ -557,7 +571,7 @@ class Barcode {
             }
             /* テキスト描画 */
             mG.DrawString(chr, mFont, Brushes.Black,
-                PosX, PosY + CodeHeight
+                PosX, PosY + mBarHeight
             );
             /* シンボル描画 */
             var symbol = CODE39[chr];
@@ -577,10 +591,6 @@ class Barcode {
 
         /* 終了 */
         PosX += spaceWidth;
-
-        if (Border) {
-            DrawBorder(PosX, PosY);
-        }
     }
 
     void DrawNW7(string value) {
@@ -589,7 +599,6 @@ class Barcode {
         var spaceWidth = Pitch * QUIET_SIZE;
 
         /* 開始 */
-        PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
 
         /* データ */
@@ -603,7 +612,7 @@ class Barcode {
             }
             /* テキスト描画 */
             mG.DrawString(chr, mFont, Brushes.Black,
-                PosX, PosY + CodeHeight
+                PosX, PosY + mBarHeight
             );
             /* シンボル描画 */
             var symbol = NW7[chr];
@@ -623,10 +632,6 @@ class Barcode {
 
         /* 終了 */
         PosX += spaceWidth;
-
-        if (Border) {
-            DrawBorder(PosX, PosY);
-        }
     }
 
     void DrawITF(string value) {
@@ -635,7 +640,6 @@ class Barcode {
         var spaceWidth = Pitch * QUIET_SIZE;
 
         /* 開始コード描画 */
-        PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
         DrawBar(narrow);
         PosX += narrow * 2;
@@ -656,7 +660,7 @@ class Barcode {
             }
             /* テキスト描画 */
             mG.DrawString(chr1 + chr2, mFont, Brushes.Black,
-                PosX, PosY + CodeHeight
+                PosX, PosY + mBarHeight
             );
             /* シンボル描画 */
             var symbol1 = ITF[val1];
@@ -683,10 +687,6 @@ class Barcode {
         DrawBar(narrow);
         PosX += narrow;
         PosX += spaceWidth;
-
-        if (Border) {
-            DrawBorder(PosX, PosY);
-        }
     }
 
     void DrawGTIN14(string value) {
@@ -695,7 +695,6 @@ class Barcode {
         var spaceWidth = Pitch * QUIET_SIZE;
 
         /* 開始コード描画 */
-        PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
         DrawBar(narrow);
         PosX += narrow * 2;
@@ -760,25 +759,23 @@ class Barcode {
         );
         var w = mG.MeasureString(str, mFont).Width;
         mG.DrawString(str, mFont, Brushes.Black,
-            (PosX - w) / 2.0f, PosY + CodeHeight
+            (PosX - w) / 2.0f, PosY + mBarHeight
         );
-
-        if (Border) {
-            DrawBorder(PosX, PosY);
-        }
     }
 
     void DrawEAN(string value) {
-        var notchHeight = 11;
+        var ofsY = 3;
+        var notchHeight = 6;
         var spaceWidth = Pitch * QUIET_SIZE;
-        var ofsY = -5;
+
+        PosY += ofsY;
 
         /* 開始コード描画 */
         PosX += Border ? 1 : 0;
         PosX += spaceWidth;
-        DrawBar(Pitch, ofsY);
+        DrawBar(Pitch);
         PosX += Pitch * 2;
-        DrawBar(Pitch, ofsY);
+        DrawBar(Pitch);
         PosX += Pitch;
 
         /* データ */
@@ -796,7 +793,7 @@ class Barcode {
                 /* パリティ指定桁 */
                 parity = EAN_P[val];
                 mG.DrawString(chr, mFont, Brushes.Black,
-                    PosX - Pitch * 12, PosY + CodeHeight - notchHeight
+                    PosX - Pitch * 12, PosY + mBarHeight - notchHeight
                 );
                 /* 次の桁へ */
                 continue;
@@ -806,9 +803,9 @@ class Barcode {
             } else if (7 == i) {
                 /* センターバー描画 */
                 PosX += Pitch;
-                DrawBar(Pitch, ofsY);
+                DrawBar(Pitch);
                 PosX += Pitch * 2;
-                DrawBar(Pitch, ofsY);
+                DrawBar(Pitch);
                 PosX += Pitch;
                 /* 右側シンボル */
                 symbol = EAN_R[val];
@@ -825,7 +822,7 @@ class Barcode {
             }
             /* テキスト描画 */
             mG.DrawString(chr, mFont, Brushes.Black,
-                PosX, PosY + CodeHeight - notchHeight
+                PosX, PosY + mBarHeight - notchHeight
             );
             /* シンボル描画 */
             for (int s = 16; 0 <= s; s -= 4) {
@@ -838,13 +835,13 @@ class Barcode {
         }
 
         /* 終了コード描画 */
-        DrawBar(Pitch, ofsY);
+        DrawBar(Pitch);
         PosX += Pitch * 2;
-        DrawBar(Pitch, ofsY);
+        DrawBar(Pitch);
         PosX += spaceWidth;
 
         if (Border) {
-            mG.DrawRectangle(Pens.Black, 0, PosY, PosX, CodeHeight - 1);
+            mG.DrawRectangle(Pens.Black, 0, PosY - ofsY, PosX, Height - 1);
         }
     }
 }
