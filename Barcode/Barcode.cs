@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
+using System.Text.RegularExpressions;
 
 class Barcode {
     const int BORDER_WEIGHT = 6;
@@ -234,17 +235,41 @@ class Barcode {
         0b01010
     };
 
-    readonly int[,] EAN = {
-        { 0b001101, 0b100111, 0b111001, 0b000000 },
-        { 0b011001, 0b110011, 0b110011, 0b001011 },
-        { 0b010011, 0b011011, 0b110110, 0b001101 },
-        { 0b111101, 0b100001, 0b100001, 0b001110 },
-        { 0b100011, 0b011101, 0b101110, 0b010011 },
-        { 0b110001, 0b111001, 0b100111, 0b011001 },
-        { 0b101111, 0b000101, 0b101000, 0b011100 },
-        { 0b111011, 0b010001, 0b100010, 0b010101 },
-        { 0b110111, 0b001001, 0b100100, 0b010110 },
-        { 0b001011, 0b010111, 0b111010, 0b011010 }
+    readonly int[,] EAN_L = {
+        { 0b001101, 0b100111 },
+        { 0b011001, 0b110011 },
+        { 0b010011, 0b011011 },
+        { 0b111101, 0b100001 },
+        { 0b100011, 0b011101 },
+        { 0b110001, 0b111001 },
+        { 0b101111, 0b000101 },
+        { 0b111011, 0b010001 },
+        { 0b110111, 0b001001 },
+        { 0b001011, 0b010111 }
+    };
+    readonly int[] EAN_R = {
+        0b111001,
+        0b110011,
+        0b110110,
+        0b100001,
+        0b101110,
+        0b100111,
+        0b101000,
+        0b100010,
+        0b100100,
+        0b111010
+    };
+    readonly int[] EAN_P = {
+        0b000000,
+        0b001011,
+        0b001101,
+        0b001110,
+        0b010011,
+        0b011001,
+        0b011100,
+        0b010101,
+        0b010110,
+        0b011010
     };
 
     public enum Type {
@@ -270,8 +295,15 @@ class Barcode {
         var temp = TrimAndPad(value, type);
         double spaceWidth = Pitch * QUIET_SIZE * 2;
         switch (type) {
-        case Type.CODE128:
-            return (temp.Length * (Pitch * 11) + Pitch * (11 + 11 + 13) + spaceWidth + (Border ? BORDER_WEIGHT : 0));
+        case Type.CODE128: {
+            int len;
+            if (Regex.IsMatch(temp, "^[0-9]+$")) {
+                len = temp.Length >> 1;
+            } else {
+                len = temp.Length;
+            }
+            return (len * (Pitch * 11) + Pitch * (11 + 11 + 13) + spaceWidth + (Border ? BORDER_WEIGHT : 0));
+        }
         case Type.CODE39:
             return (temp.Length * (Pitch * 7 + Pitch * 3 * 3) + spaceWidth + (Border ? BORDER_WEIGHT : 0));
         case Type.NW7_CODABAR: {
@@ -300,9 +332,6 @@ class Barcode {
     }
 
     public void CreateCanvas(int width, int height) {
-        if (width < 1 || height < 1) {
-            return;
-        }
         if (null != mG) {
             mG.Dispose();
             mG = null;
@@ -310,6 +339,12 @@ class Barcode {
         if (null != Bmp) {
             Bmp.Dispose();
             Bmp = null;
+        }
+        if (width < 1) {
+            width = 1;
+        }
+        if (height < 1) {
+            height = 1;
         }
         Bmp = new Bitmap(width, height);
         mG = Graphics.FromImage(Bmp);
@@ -335,7 +370,7 @@ class Barcode {
             DrawITF(temp);
             break;
         case Type.GTIN14:
-            DrawITF(temp, true);
+            DrawGTIN14(temp);
             break;
         case Type.EAN_JAN:
             DrawEAN(temp);
@@ -348,6 +383,11 @@ class Barcode {
     string TrimAndPad(string value, Type type) {
         switch (type) {
         case Type.CODE128:
+            if (Regex.IsMatch(value, "^[0-9]+$")) {
+                if (1 == value.Length % 2) {
+                    value = "0" + value;
+                }
+            }
             return value;
         case Type.CODE39:
             return "*" + value.Replace("\r", "").Replace("*", "").ToUpper() + "*";
@@ -425,12 +465,22 @@ class Barcode {
         int val;
         int symbol;
 
-        var table = CODE128_B;
+        /* 数字/文字のタイプを決定 */
+        List<string> table;
+        int readLen;
+        if (Regex.IsMatch(value, "^[0-9]+$")) {
+            table = CODE128_C;
+            val = table.IndexOf("START_C");
+            readLen = 2;
+        } else {
+            table = CODE128_B;
+            val = table.IndexOf("START_B");
+            readLen = 1;
+        }
 
-        /* begin of code */
+        /* 開始コード */
         PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
-        val = table.IndexOf("START_B");
         sum = val;
         symbol = CODE128[val];
         for (int j = 5; 0 <= j; j--) {
@@ -441,35 +491,17 @@ class Barcode {
             PosX += barWidth;
         }
 
-        /* draw data */
-        var readLen = 1;
-        for (int i = 0; 1 <= value.Length; i++) {
-            if (CODE128_B == table) {
-                readLen = 1;
-            }
-            if (CODE128_C == table) {
-                if (value.Length < 2) {
-                    readLen = 1;
-                } else {
-                    readLen = 2;
-                }
-            }
-            var chr = value.Substring(0, readLen);
-            if (CODE128_B == table) {
-                if (!table.Contains(chr)) {
-                    chr = " ";
-                }
-            }
-            if (CODE128_C == table) {
-                if (!table.Contains(chr)) {
-                    chr = "00";
-                }
+        /* データ */
+        for (int i = 0, weight = 1; i < value.Length; i += readLen, weight++) {
+            var chr = value.Substring(i, readLen);
+            if (CODE128_B == table && !table.Contains(chr)) {
+                chr = " ";
             }
             mG.DrawString(chr, mFont, Brushes.Black,
                 PosX, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
             );
             val = table.IndexOf(chr);
-            sum += val * (i + 1);
+            sum += val * weight;
             symbol = CODE128[val];
             for (int j = 5; 0 <= j; j--) {
                 var barWidth = Pitch * ((symbol >> (j * 4)) & 0xF);
@@ -478,12 +510,10 @@ class Barcode {
                 }
                 PosX += barWidth;
             }
-            value = value.Substring(readLen, value.Length - readLen);
         }
 
-        /* end of code */
-        sum = sum % 103;
-        symbol = CODE128[sum];
+        /* チェックディジット */
+        symbol = CODE128[sum % 103];
         for (int j = 5; 0 <= j; j--) {
             var barWidth = Pitch * ((symbol >> (j * 4)) & 0xF);
             if (1 == j % 2) {
@@ -491,6 +521,8 @@ class Barcode {
             }
             PosX += barWidth;
         }
+
+        /* 終了コード */
         symbol = CODE128[table.IndexOf("STOP")];
         for (int j = 6; 0 <= j; j--) {
             var barWidth = Pitch * ((symbol >> (j * 4)) & 0xF);
@@ -501,7 +533,6 @@ class Barcode {
         }
         PosX += spaceWidth;
 
-        /* draw border */
         if (Border) {
             DrawBorder(PosX, PosY);
         }
@@ -512,11 +543,11 @@ class Barcode {
         var wide = Pitch * 3;
         var spaceWidth = Pitch * QUIET_SIZE;
 
-        /* begin of code */
+        /* 開始 */
         PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
 
-        /* draw data */
+        /* データ */
         for (int i = 0; i < value.Length; i++) {
             var chr = value.Substring(i, 1);
             if (!CODE39.ContainsKey(chr)) {
@@ -540,10 +571,9 @@ class Barcode {
             }
         }
 
-        /* end of code */
+        /* 終了 */
         PosX += spaceWidth;
 
-        /* draw border */
         if (Border) {
             DrawBorder(PosX, PosY);
         }
@@ -554,11 +584,11 @@ class Barcode {
         var wide = Pitch * 3;
         var spaceWidth = Pitch * QUIET_SIZE;
 
-        /* begin of code */
+        /* 開始 */
         PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
 
-        /* draw data */
+        /* データ */
         for (int i = 0; i < value.Length; i++) {
             var chr = value.Substring(i, 1);
             if (!NW7.ContainsKey(chr)) {
@@ -585,21 +615,20 @@ class Barcode {
             }
         }
 
-        /* end of code */
+        /* 終了 */
         PosX += spaceWidth;
 
-        /* draw border */
         if (Border) {
             DrawBorder(PosX, PosY);
         }
     }
 
-    void DrawITF(string value, bool gtin14 = false) {
+    void DrawITF(string value) {
         var narrow = Pitch;
         var wide = Pitch * 3;
         var spaceWidth = Pitch * QUIET_SIZE;
 
-        /* begin of code */
+        /* 開始コード */
         PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
         DrawBar(narrow);
@@ -607,9 +636,7 @@ class Barcode {
         DrawBar(narrow);
         PosX += narrow * 2;
 
-        /* draw data */
-        var sum = 0;
-        var str = "";
+        /* データ */
         for (int i = 0; i < value.Length; i += 2) {
             var chr1 = value.Substring(i, 1);
             var chr2 = value.Substring(i + 1, 1);
@@ -621,24 +648,11 @@ class Barcode {
             if (!int.TryParse(chr2, out val2)) {
                 chr2 = "0";
             }
+            mG.DrawString(chr1 + chr2, mFont, Brushes.Black,
+                PosX, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
+            );
             var symbol1 = ITF[val1];
             var symbol2 = ITF[val2];
-            if (gtin14) {
-                sum += val1 * 3 + val2;
-                if (12 == i) {
-                    val2 = sum % 10;
-                    val2 = (10 - val2) % 10;
-                    chr2 = val2.ToString();
-                    symbol2 = ITF[val2];
-                    str += chr1 + chr2;
-                } else {
-                    str += chr1 + chr2;
-                }
-            } else {
-                mG.DrawString(chr1 + chr2, mFont, Brushes.Black,
-                    PosX, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
-                );
-            }
             for (int j = 4; 0 <= j; j--) {
                 if (1 == ((symbol1 >> j) & 1)) {
                     DrawBar(wide);
@@ -655,27 +669,90 @@ class Barcode {
             }
         }
 
-        /* end of code */
+        /* 終了コード */
         DrawBar(wide);
         PosX += wide + narrow;
         DrawBar(narrow);
         PosX += narrow;
         PosX += spaceWidth;
 
-        if (gtin14) {
-            str = string.Format("{0} {1} {2} {3}",
-                str.Substring(0, 3),
-                str.Substring(3, 5),
-                str.Substring(8, 5),
-                str.Substring(13, 1)
-            );
-            var w = mG.MeasureString(str, mFont).Width;
-            mG.DrawString(str, mFont, Brushes.Black,
-                (PosX - w) / 2.0f, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
-            );
+        if (Border) {
+            DrawBorder(PosX, PosY);
+        }
+    }
+
+    void DrawGTIN14(string value) {
+        var narrow = Pitch;
+        var wide = Pitch * 3;
+        var spaceWidth = Pitch * QUIET_SIZE;
+
+        /* 開始コード */
+        PosX += Border ? (BORDER_WEIGHT / 2) : 0;
+        PosX += spaceWidth;
+        DrawBar(narrow);
+        PosX += narrow * 2;
+        DrawBar(narrow);
+        PosX += narrow * 2;
+
+        /* データ */
+        var sum = 0;
+        var str = "";
+        for (int i = 0; i < 14; i += 2) {
+            var chr1 = value.Substring(i, 1);
+            var chr2 = value.Substring(i + 1, 1);
+            int val1;
+            int val2;
+            if (!int.TryParse(chr1, out val1)) {
+                chr1 = "0";
+            }
+            if (!int.TryParse(chr2, out val2)) {
+                chr2 = "0";
+            }
+            sum += val1 * 3 + val2;
+            var symbol1 = ITF[val1];
+            var symbol2 = ITF[val2];
+            if (12 == i) {
+                /* チェックディジット */
+                val2 = sum % 10;
+                val2 = (10 - val2) % 10;
+                chr2 = val2.ToString();
+                symbol2 = ITF[val2];
+            }
+            str += chr1 + chr2;
+            for (int j = 4; 0 <= j; j--) {
+                if (1 == ((symbol1 >> j) & 1)) {
+                    DrawBar(wide);
+                    PosX += wide;
+                } else {
+                    DrawBar(narrow);
+                    PosX += narrow;
+                }
+                if (1 == ((symbol2 >> j) & 1)) {
+                    PosX += wide;
+                } else {
+                    PosX += narrow;
+                }
+            }
         }
 
-        /* draw border */
+        /* 終了コード */
+        DrawBar(wide);
+        PosX += wide + narrow;
+        DrawBar(narrow);
+        PosX += narrow;
+        PosX += spaceWidth;
+
+        str = string.Format("{0} {1} {2} {3}",
+            str.Substring(0, 3),
+            str.Substring(3, 5),
+            str.Substring(8, 5),
+            str.Substring(13, 1)
+        );
+        var w = mG.MeasureString(str, mFont).Width;
+        mG.DrawString(str, mFont, Brushes.Black,
+            (PosX - w) / 2.0f, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
+        );
+
         if (Border) {
             DrawBorder(PosX, PosY);
         }
@@ -685,7 +762,7 @@ class Barcode {
         var spaceWidth = Pitch * QUIET_SIZE;
         var notchHeight = 5;
 
-        /* begin of code */
+        /* 開始コード */
         PosX += Border ? 1 : 0;
         PosX += spaceWidth;
         DrawBar(Pitch);
@@ -693,9 +770,9 @@ class Barcode {
         DrawBar(Pitch);
         PosX += Pitch;
 
-        /* draw data */
+        /* データ */
         var sum = 0;
-        var oddEven = 0;
+        var parity = 0;
         for (int i = 0; i < value.Length; i++) {
             var chr = value.Substring(i, 1);
             int val;
@@ -703,31 +780,39 @@ class Barcode {
                 chr = "0";
             }
             sum += val * (0 == i % 2 ? 1 : 3);
+            int symbol;
             if (0 == i) {
-                oddEven = EAN[val, 3];
+                /* パリティ指定桁 */
+                parity = EAN_P[val];
                 mG.DrawString(chr, mFont, Brushes.Black,
                     spaceWidth - Pitch * 8, PosY + CodeHeight - notchHeight
                 );
+                /* 次の桁へ */
                 continue;
-            }
-            if (7 == i) {
+            } else if (i < 7) {
+                /* 左側シンボル */
+                symbol = EAN_L[val, (parity >> (6 - i)) & 1];
+            } else if (7 == i) {
+                /* センターバー描画 */
                 PosX += Pitch;
                 DrawBar(Pitch);
                 PosX += Pitch * 2;
                 DrawBar(Pitch);
                 PosX += Pitch;
-            }
-            int symbol;
-            if (i < 7) {
-                symbol = EAN[val, (oddEven >> (6 - i)) & 1];
-            } else if (12 == i) {
+                /* 右側シンボル */
+                symbol = EAN_R[val];
+            } else if (i < 12) {
+                /* 右側シンボル */
+                symbol = EAN_R[val];
+            } else {
+                /* チェックディジット */
                 val = sum % 10;
                 val = (10 - val) % 10;
                 chr = val.ToString();
-                symbol = EAN[val, 2];
-            } else {
-                symbol = EAN[val, 2];
+                /* 右側シンボル */
+                symbol = EAN_R[val];
             }
+            /* シンボル描画 */
             mG.DrawString(chr, mFont, Brushes.Black,
                 PosX, PosY + CodeHeight - notchHeight
             );
@@ -750,13 +835,12 @@ class Barcode {
             }
         }
 
-        /* end of code */
+        /* 終了コード */
         DrawBar(Pitch);
         PosX += Pitch * 2;
         DrawBar(Pitch);
         PosX += spaceWidth;
 
-        /* draw border */
         if (Border) {
             mG.DrawRectangle(Pens.Black, 0, PosY - 2, PosX, CodeHeight + 8);
         }

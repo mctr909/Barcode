@@ -120,13 +120,14 @@
             // 
             // cmbType
             // 
+            this.cmbType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbType.FormattingEnabled = true;
             this.cmbType.Items.AddRange(new object[] {
-            "CODE128",
-            "CODE39",
-            "NW7/CODABAR",
+            "Code128",
+            "Code39",
+            "Codabar/NW7",
             "ITF",
-            "ITF-14",
+            "ITF/GTIN-14",
             "EAN/JAN",
             "QR"});
             this.cmbType.Location = new System.Drawing.Point(370, 24);

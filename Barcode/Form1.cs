@@ -104,7 +104,7 @@ namespace Code {
                 codeCount++;
             }
             const int SPACE_HEIGHT = 40;
-            code.CreateCanvas((int)maxWidth, codeCount * (code.CodeHeight + SPACE_HEIGHT) + 4);
+            code.CreateCanvas((int)maxWidth, codeCount * (code.CodeHeight + SPACE_HEIGHT));
             code.PosY = SPACE_HEIGHT / 2.0f;
             for (int l = 0; l < lines.Length; l++) {
                 var line = lines[l];
