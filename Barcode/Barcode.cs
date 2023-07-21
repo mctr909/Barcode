@@ -483,9 +483,9 @@ class Barcode {
         PosX += spaceWidth;
         sum = val;
         symbol = CODE128[val];
-        for (int j = 5; 0 <= j; j--) {
-            var barWidth = Pitch * ((symbol >> (j * 4)) & 0xF);
-            if (1 == j % 2) {
+        for (int s = 20; 0 <= s; s -= 4) {
+            var barWidth = Pitch * ((symbol >> s) & 0xF);
+            if (4 == s % 8) {
                 DrawBar(barWidth);
             }
             PosX += barWidth;
@@ -505,9 +505,9 @@ class Barcode {
             val = table.IndexOf(chr);
             sum += val * weight;
             symbol = CODE128[val];
-            for (int j = 5; 0 <= j; j--) {
-                var barWidth = Pitch * ((symbol >> (j * 4)) & 0xF);
-                if (1 == j % 2) {
+            for (int s = 20; 0 <= s; s -= 4) {
+                var barWidth = Pitch * ((symbol >> s) & 0xF);
+                if (4 == s % 8) {
                     DrawBar(barWidth);
                 }
                 PosX += barWidth;
@@ -516,9 +516,9 @@ class Barcode {
 
         /* チェックディジット描画 */
         symbol = CODE128[sum % 103];
-        for (int j = 5; 0 <= j; j--) {
-            var barWidth = Pitch * ((symbol >> (j * 4)) & 0xF);
-            if (1 == j % 2) {
+        for (int s = 20; 0 <= s; s -= 4) {
+            var barWidth = Pitch * ((symbol >> s) & 0xF);
+            if (4 == s % 8) {
                 DrawBar(barWidth);
             }
             PosX += barWidth;
@@ -526,9 +526,9 @@ class Barcode {
 
         /* 終了コード描画 */
         symbol = CODE128[table.IndexOf("STOP")];
-        for (int j = 6; 0 <= j; j--) {
-            var barWidth = Pitch * ((symbol >> (j * 4)) & 0xF);
-            if (0 == j % 2) {
+        for (int s = 24; 0 <= s; s -= 4) {
+            var barWidth = Pitch * ((symbol >> s) & 0xF);
+            if (0 == s % 8) {
                 DrawBar(barWidth);
             }
             PosX += barWidth;
@@ -561,14 +561,14 @@ class Barcode {
             );
             /* シンボル描画 */
             var symbol = CODE39[chr];
-            for (int j = 9; 0 <= j; j--) {
+            for (int s = 9; 0 <= s; s--) {
                 float barWidth;
-                if (1 == ((symbol >> j) & 1)) {
+                if (1 == ((symbol >> s) & 1)) {
                     barWidth = wide;
                 } else {
                     barWidth = narrow;
                 }
-                if (1 == j % 2) {
+                if (1 == s % 2) {
                     DrawBar(barWidth);
                 }
                 PosX += barWidth;
@@ -607,14 +607,14 @@ class Barcode {
             );
             /* シンボル描画 */
             var symbol = NW7[chr];
-            for (int j = 7; 0 <= j; j--) {
+            for (int s = 7; 0 <= s; s--) {
                 float barWidth;
-                if (1 == ((symbol >> j) & 1)) {
+                if (1 == ((symbol >> s) & 1)) {
                     barWidth = wide;
                 } else {
                     barWidth = narrow;
                 }
-                if (1 == j % 2) {
+                if (1 == s % 2) {
                     DrawBar(barWidth);
                 }
                 PosX += barWidth;
@@ -661,15 +661,15 @@ class Barcode {
             /* シンボル描画 */
             var symbol1 = ITF[val1];
             var symbol2 = ITF[val2];
-            for (int j = 4; 0 <= j; j--) {
-                if (1 == ((symbol1 >> j) & 1)) {
+            for (int s = 4; 0 <= s; s--) {
+                if (1 == ((symbol1 >> s) & 1)) {
                     DrawBar(wide);
                     PosX += wide;
                 } else {
                     DrawBar(narrow);
                     PosX += narrow;
                 }
-                if (1 == ((symbol2 >> j) & 1)) {
+                if (1 == ((symbol2 >> s) & 1)) {
                     PosX += wide;
                 } else {
                     PosX += narrow;
@@ -728,15 +728,15 @@ class Barcode {
             }
             str += chr1 + chr2;
             /* シンボル描画 */
-            for (int j = 4; 0 <= j; j--) {
-                if (1 == ((symbol1 >> j) & 1)) {
+            for (int s = 4; 0 <= s; s--) {
+                if (1 == ((symbol1 >> s) & 1)) {
                     DrawBar(wide);
                     PosX += wide;
                 } else {
                     DrawBar(narrow);
                     PosX += narrow;
                 }
-                if (1 == ((symbol2 >> j) & 1)) {
+                if (1 == ((symbol2 >> s) & 1)) {
                     PosX += wide;
                 } else {
                     PosX += narrow;
@@ -827,9 +827,9 @@ class Barcode {
                 PosX, PosY + CodeHeight - notchHeight
             );
             /* シンボル描画 */
-            for (int j = 16; 0 <= j; j -= 4) {
-                var barWidth = Pitch * ((symbol >> j) & 0xF);
-                if (4 == j % 8) {
+            for (int s = 16; 0 <= s; s -= 4) {
+                var barWidth = Pitch * ((symbol >> s) & 0xF);
+                if (4 == s % 8) {
                     DrawBar(barWidth, -notchHeight);
                 }
                 PosX += barWidth;
