@@ -236,28 +236,28 @@ class Barcode {
     };
 
     readonly int[,] EAN_L = {
-        { 0b001101, 0b100111 },
-        { 0b011001, 0b110011 },
-        { 0b010011, 0b011011 },
-        { 0b111101, 0b100001 },
-        { 0b100011, 0b011101 },
-        { 0b110001, 0b111001 },
-        { 0b101111, 0b000101 },
-        { 0b111011, 0b010001 },
-        { 0b110111, 0b001001 },
-        { 0b001011, 0b010111 }
+        { 0x32110, 0x11230 },
+        { 0x22210, 0x12220 },
+        { 0x21220, 0x22120 },
+        { 0x14110, 0x11410 },
+        { 0x11320, 0x23110 },
+        { 0x12310, 0x13210 },
+        { 0x11140, 0x41110 },
+        { 0x13120, 0x21310 },
+        { 0x12130, 0x31210 },
+        { 0x31120, 0x21130 }
     };
     readonly int[] EAN_R = {
-        0b111001,
-        0b110011,
-        0b110110,
-        0b100001,
-        0b101110,
-        0b100111,
-        0b101000,
-        0b100010,
-        0b100100,
-        0b111010
+        0x13210,
+        0x12220,
+        0x12121,
+        0x11410,
+        0x11131,
+        0x11230,
+        0x11113,
+        0x11311,
+        0x11212,
+        0x13111
     };
     readonly int[] EAN_P = {
         0b000000,
@@ -478,7 +478,7 @@ class Barcode {
             readLen = 1;
         }
 
-        /* 開始コード */
+        /* 開始コード描画 */
         PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
         sum = val;
@@ -497,9 +497,11 @@ class Barcode {
             if (CODE128_B == table && !table.Contains(chr)) {
                 chr = " ";
             }
+            /* テキスト描画 */
             mG.DrawString(chr, mFont, Brushes.Black,
                 PosX, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
             );
+            /* シンボル描画 */
             val = table.IndexOf(chr);
             sum += val * weight;
             symbol = CODE128[val];
@@ -512,7 +514,7 @@ class Barcode {
             }
         }
 
-        /* チェックディジット */
+        /* チェックディジット描画 */
         symbol = CODE128[sum % 103];
         for (int j = 5; 0 <= j; j--) {
             var barWidth = Pitch * ((symbol >> (j * 4)) & 0xF);
@@ -522,7 +524,7 @@ class Barcode {
             PosX += barWidth;
         }
 
-        /* 終了コード */
+        /* 終了コード描画 */
         symbol = CODE128[table.IndexOf("STOP")];
         for (int j = 6; 0 <= j; j--) {
             var barWidth = Pitch * ((symbol >> (j * 4)) & 0xF);
@@ -553,9 +555,11 @@ class Barcode {
             if (!CODE39.ContainsKey(chr)) {
                 chr = " ";
             }
+            /* テキスト描画 */
             mG.DrawString(chr, mFont, Brushes.Black,
                 PosX, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
             );
+            /* シンボル描画 */
             var symbol = CODE39[chr];
             for (int j = 9; 0 <= j; j--) {
                 float barWidth;
@@ -597,9 +601,11 @@ class Barcode {
             if (1 <= i && i < value.Length - 1 && 0 <= chr.IndexOfAny(NW7_TERM)) {
                 chr = "-";
             }
+            /* テキスト描画 */
             mG.DrawString(chr, mFont, Brushes.Black,
                 PosX, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
             );
+            /* シンボル描画 */
             var symbol = NW7[chr];
             for (int j = 7; 0 <= j; j--) {
                 float barWidth;
@@ -628,7 +634,7 @@ class Barcode {
         var wide = Pitch * 3;
         var spaceWidth = Pitch * QUIET_SIZE;
 
-        /* 開始コード */
+        /* 開始コード描画 */
         PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
         DrawBar(narrow);
@@ -648,9 +654,11 @@ class Barcode {
             if (!int.TryParse(chr2, out val2)) {
                 chr2 = "0";
             }
+            /* テキスト描画 */
             mG.DrawString(chr1 + chr2, mFont, Brushes.Black,
                 PosX, PosY + CodeHeight + (Border ? (BORDER_WEIGHT / 2) : 0)
             );
+            /* シンボル描画 */
             var symbol1 = ITF[val1];
             var symbol2 = ITF[val2];
             for (int j = 4; 0 <= j; j--) {
@@ -669,7 +677,7 @@ class Barcode {
             }
         }
 
-        /* 終了コード */
+        /* 終了コード描画 */
         DrawBar(wide);
         PosX += wide + narrow;
         DrawBar(narrow);
@@ -686,7 +694,7 @@ class Barcode {
         var wide = Pitch * 3;
         var spaceWidth = Pitch * QUIET_SIZE;
 
-        /* 開始コード */
+        /* 開始コード描画 */
         PosX += Border ? (BORDER_WEIGHT / 2) : 0;
         PosX += spaceWidth;
         DrawBar(narrow);
@@ -719,6 +727,7 @@ class Barcode {
                 symbol2 = ITF[val2];
             }
             str += chr1 + chr2;
+            /* シンボル描画 */
             for (int j = 4; 0 <= j; j--) {
                 if (1 == ((symbol1 >> j) & 1)) {
                     DrawBar(wide);
@@ -735,13 +744,14 @@ class Barcode {
             }
         }
 
-        /* 終了コード */
+        /* 終了コード描画 */
         DrawBar(wide);
         PosX += wide + narrow;
         DrawBar(narrow);
         PosX += narrow;
         PosX += spaceWidth;
 
+        /* テキスト描画 */
         str = string.Format("{0} {1} {2} {3}",
             str.Substring(0, 3),
             str.Substring(3, 5),
@@ -762,7 +772,7 @@ class Barcode {
         var spaceWidth = Pitch * QUIET_SIZE;
         var notchHeight = 5;
 
-        /* 開始コード */
+        /* 開始コード描画 */
         PosX += Border ? 1 : 0;
         PosX += spaceWidth;
         DrawBar(Pitch);
@@ -812,30 +822,21 @@ class Barcode {
                 /* 右側シンボル */
                 symbol = EAN_R[val];
             }
-            /* シンボル描画 */
+            /* テキスト描画 */
             mG.DrawString(chr, mFont, Brushes.Black,
                 PosX, PosY + CodeHeight - notchHeight
             );
-            float barWidth = 0;
-            for (int j = 6; 0 <= j; j--) {
-                if (1 == ((symbol >> j) & 1)) {
-                    barWidth += Pitch;
-                } else {
-                    if (0 < barWidth) {
-                        DrawBar(barWidth, -notchHeight);
-                        PosX += barWidth;
-                        barWidth = 0;
-                    }
-                    PosX += Pitch;
+            /* シンボル描画 */
+            for (int j = 16; 0 <= j; j -= 4) {
+                var barWidth = Pitch * ((symbol >> j) & 0xF);
+                if (4 == j % 8) {
+                    DrawBar(barWidth, -notchHeight);
                 }
-            }
-            if (0 < barWidth) {
-                DrawBar(barWidth, -notchHeight);
                 PosX += barWidth;
             }
         }
 
-        /* 終了コード */
+        /* 終了コード描画 */
         DrawBar(Pitch);
         PosX += Pitch * 2;
         DrawBar(Pitch);
