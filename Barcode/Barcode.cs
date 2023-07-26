@@ -410,7 +410,7 @@ class Barcode {
         case Type.CODE39:
             return "*" + value.Replace("\r", "").Replace("*", "").ToUpper() + "*";
         case Type.NW7_CODABAR: {
-            var temp = value.Replace("\r", "").ToUpper();
+            var temp = value.Replace("\r", "").Replace(" ", "").ToUpper();
             if (temp.Substring(0, 1).IndexOfAny(NW7_TERM) < 0) {
                 temp = "A" + temp;
             }
@@ -420,16 +420,16 @@ class Barcode {
             return temp;
         }
         case Type.ITF: {
-            var temp = value.Replace("\r", "");
+            var temp = value.Replace("\r", "").Replace(" ", "");
             if (1 == temp.Length % 2) {
                 temp += "0";
             }
             return temp;
         }
         case Type.GTIN14:
-            return value.Replace("\r", "").PadRight(13, '0').Substring(0, 13) + "0";
+            return value.Replace("\r", "").Replace(" ", "").PadRight(13, '0').Substring(0, 13) + "0";
         case Type.EAN_JAN:
-            return value.Replace("\r", "").PadRight(12, '0').Substring(0, 12) + "0";
+            return value.Replace("\r", "").Replace(" ", "").PadRight(12, '0').Substring(0, 12) + "0";
         default:
             return "";
         }
