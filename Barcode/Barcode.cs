@@ -333,7 +333,7 @@ class Barcode {
         case Type.GTIN14:
             return (14 * (Pitch * 3 + Pitch * 3 * 2) + Pitch * 9 + spaceWidth + (Border ? BORDER_WEIGHT : 0));
         case Type.EAN_JAN:
-            return (Pitch * (6 * 12 + 3 + 5 + 3) + Pitch * 10 + spaceWidth + (Border ? 2 : 0));
+            return (Pitch * (6 * 12 + 3 + 5 + 4) + Pitch * 10 + spaceWidth + (Border ? 2 : 0));
         default:
             return 0;
         }
