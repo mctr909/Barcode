@@ -835,6 +835,7 @@ class Barcode {
         }
 
         /* 終了コード描画 */
+        PosX += Pitch;
         DrawBar(Pitch);
         PosX += Pitch * 2;
         DrawBar(Pitch);
